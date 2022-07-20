@@ -233,6 +233,43 @@ void print_huffman_table(Huffman_Hash_Table* table)
 	} 
 }
 
+HUFFMAN_RESULT huffman_create_sorting_data(Huffman_Hash_Table* table, Huffman_sort_node** sorting_data)
+{
+	HUFFMAN_RESULT retval = HUFFMAN_SUCCESS;
+	Huffman_sort_node* temp_node = NULL; 
+	if(NULL == table)
+	{
+		std::cout << "Hash table is null\n";
+		retval = HUFFMAN_FAILURE;
+	}
+	else
+	{
+	    temp_node = (Huffman_sort_node*) malloc(table->count * sizeof(Huffman_sort_node));
+		if (NULL == temp_node)
+		{
+			std::cout << "Huffman Sorting input data Memory error\n";
+			retval = HUFFMAN_EFAIL_MEMORY;
+		}
+		else
+		{
+			int j = 0;
+			for (int i = 0; i < HashCapacity; i++)
+			{
+			    if(NULL != table->items[i])
+			    {
+				    temp_node[j].array_id = j;
+					temp_node[j].ascii_id = i;
+					temp_node[j].item_count = table->items[i]->count;
+					++j;
+				}
+			}
+			*sorting_data = temp_node;
+		}
+	}
+	return retval;
+}
+
+#if 0
 HUFFMAN_RESULT huffman_hash_table_sort(Huffman_Hash_Table* table, Huffman_Pqueue_node** Pqueue)
 {
 	uint16_t entries[HashCapacity] = {0};
@@ -261,7 +298,7 @@ HUFFMAN_RESULT huffman_hash_table_sort(Huffman_Hash_Table* table, Huffman_Pqueue
 	for(int i = 0; i< HashCapacity; i++)
 	//for(int i = 0; i< table->count; i++)
 	{
-		std::cout << "Sorted entries " << i << "=" << entries[i] << std::endl;
+		//std::cout << "Sorted entries " << i << "=" << entries[i] << std::endl;
 	}
 
 	// copy the priority queue
@@ -334,6 +371,98 @@ uint16_t get_max_item_count(uint16_t*a, uint16_t n)
 	}
 	return max_item;
 }
+#endif
+
+HUFFMAN_RESULT huffman_hash_table_sort(Huffman_sort_node* table, uint16_t table_size)
+{
+	HUFFMAN_RESULT retval = HUFFMAN_SUCCESS; 
+	if (NULL == table || table_size <= 0 || table_size > 255) 
+	{
+		std::cout << "Memory access error or table size error";
+		retval = HUFFMAN_FAILURE;
+	}
+	
+	retval = huffman_radix_sort(table, table_size);
+
+	for(int i = 0; i< table_size; i++)
+	{
+		std::cout << "Sorted entries " << table[i].array_id << "= " << table[i].item_count <<" Ascii = " << table[i].ascii_id<< std::endl;
+	}
+
+	// copy the priority queue
+	return retval;
+}
+
+HUFFMAN_RESULT huffman_radix_sort(Huffman_sort_node* a, uint16_t n)
+{
+	HUFFMAN_RESULT retval = HUFFMAN_SUCCESS;
+	
+	int16_t max_count = get_max_item_count(a, n);
+	std::cout << "Max Elemental Item Count = " << max_count << std::endl;
+
+	for(uint16_t pos = 1; max_count/pos > 0; pos *= 10)
+	{
+		retval = huffman_count_sort(a, n, pos);
+	}
+
+	return retval;
+}
+
+HUFFMAN_RESULT huffman_count_sort(Huffman_sort_node*a, uint16_t n, uint16_t pos)
+{
+	HUFFMAN_RESULT retval = HUFFMAN_SUCCESS;
+
+	uint16_t count[10] = {0}; 
+	Huffman_sort_node* b = NULL; // temporary array
+
+	b = (Huffman_sort_node*) malloc(n*sizeof(Huffman_sort_node));
+	memset(&b[0], 0, n*sizeof(Huffman_sort_node));
+
+	//Find count of digits and increment respective index content by 1;
+	for(int i = 0; i< n; i++)
+	{
+		++count[(a[i].item_count/pos) % 10]; // find the positional digit at content of a[i].item_count
+	}
+	
+	//Find Prefix sum
+	for (int i = 1; i < 10; i++)
+	{
+		count[i] = count[i] + count[i-1];
+	}
+
+	//Map the item in 'a' starting from right to maintain stability.(Element coming first would be reported first)
+	for(int i = n-1; i >=0; i--)
+	{	
+		int idx = --count[(a[i].item_count/pos)%10];
+		b[idx].item_count = a[i].item_count;
+		b[idx].array_id = idx;
+		b[idx].ascii_id = a[i].ascii_id;
+	}
+
+	for(int i = 0; i< n; i++)
+	{
+		a[i].array_id = b[i].array_id;
+		a[i].ascii_id = b[i].ascii_id;
+		a[i].item_count = b[i].item_count;
+	}
+	free(b);
+	return retval;
+}
+
+uint16_t get_max_item_count(Huffman_sort_node*a, uint16_t n)
+{
+	uint16_t max_item = a[0].item_count;
+	if (NULL != a)
+	{
+        for (int i = 1; i < n; i++)
+            if (a[i].item_count > max_item)
+		    {
+                max_item = a[i].item_count;
+		    }
+	}
+	return max_item;
+}
+
 /**
  * TODO Complete this function
  **/
@@ -346,6 +475,7 @@ int huffman_encode(const unsigned char *bufin,
 	uint16_t key = 0;
 	Huffman_Hash_Table* hash_table = NULL;
 	Huffman_Pqueue_node* PQueue = NULL;
+	Huffman_sort_node* input_sort_data = NULL;
 	create_huffman_hashtable(HashCapacity, &hash_table);
 
 	for(int64_t i = 0; i< bufinlen;i++)
@@ -355,8 +485,15 @@ int huffman_encode(const unsigned char *bufin,
 	    huff_node_insert(hash_table, &key, &val);
 	}
 	print_huffman_table(hash_table);
-	huffman_hash_table_sort(hash_table, &PQueue);
+	huffman_create_sorting_data(hash_table, &input_sort_data);
+	for(int i = 0; i< hash_table->count; i++)
+	{
+		std::cout << "Input Sort entries " << i << "=" << input_sort_data[i].item_count << std::endl;
+	}
+	//huffman_hash_table_sort(hash_table, &PQueue);
+	huffman_hash_table_sort(input_sort_data, hash_table->count);
 	free_huffman_hash_table(hash_table);
+	free(input_sort_data);
 	return 0;
 }
 

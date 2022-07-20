@@ -45,10 +45,18 @@ typedef struct Huffman_Hash_Table_s
 typedef struct Huffman_Pqueue_node_s
 {
 	huff_node* p_item;
-	char* p_item_huff_code;
+	char* p_item_binary; //binary representation
 	huff_node* left;
 	huff_node* right;
+	uint16_t priority;
 } Huffman_Pqueue_node;
+
+typedef struct Huffman_sort_node_s
+{	
+	uint16_t array_id;
+	uint16_t ascii_id;
+	uint16_t item_count;
+}Huffman_sort_node;
 
 HUFFMAN_RESULT create_huff_node(uint16_t key, char* value, huff_node** node);
 HUFFMAN_RESULT create_huffman_hashtable(uint64_t size, Huffman_Hash_Table** table);
@@ -59,10 +67,17 @@ HUFFMAN_RESULT huffman_node_increment_count(Huffman_Hash_Table* table, uint16_t 
 HUFFMAN_RESULT huffman_node_search(Huffman_Hash_Table* table, char* value, uint16_t* key);
 void print_huffman_item(Huffman_Hash_Table* table, char* val);
 void print_huffman_table(Huffman_Hash_Table* table);
+HUFFMAN_RESULT huffman_create_sorting_data(Huffman_Hash_Table* table, Huffman_sort_node** sorting_data);
+#if 0
 HUFFMAN_RESULT huffman_hash_table_sort(Huffman_Hash_Table* table, Huffman_Pqueue_node** Pqueue);
 HUFFMAN_RESULT huffman_radix_sort(uint16_t* a, uint16_t n);
 HUFFMAN_RESULT huffman_count_sort(uint16_t*a, uint16_t n, uint16_t pos);
 uint16_t get_max_item_count(uint16_t*a, uint16_t n);
+#endif
+HUFFMAN_RESULT huffman_hash_table_sort(Huffman_sort_node* table, uint16_t table_size);
+HUFFMAN_RESULT huffman_radix_sort(Huffman_sort_node* a, uint16_t n);
+HUFFMAN_RESULT huffman_count_sort(Huffman_sort_node*a, uint16_t n, uint16_t pos);
+uint16_t get_max_item_count(Huffman_sort_node*a, uint16_t n);
 /** Basic data Structures 
  * 1) Basic Node
  * 2) Array vector for characters and their frequency, Histogram (Class implementation of character and their frequency)
