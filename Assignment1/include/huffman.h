@@ -4,6 +4,7 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <queue>
 
 const uint64_t HashCapacity = 256;
 
@@ -58,8 +59,55 @@ typedef struct Huffman_sort_node_s
 	uint16_t item_count;
 	struct Huffman_sort_node_s* left;
 	struct Huffman_sort_node_s* right;
-	char* bin_symbol; //binary representation
 }Huffman_sort_node;
+
+//Referenced from Geeks for Geeks
+class HuffmanTreeNode 
+{
+public:
+	// array id
+	uint16_t array_id; // just to see the history of original element for debugging
+    // Stores ascii
+    uint16_t ascii_id;
+ 
+    // Stores frequency of
+    // the character
+    uint16_t item_freq;
+ 
+    // Left child of the
+    // current node
+    HuffmanTreeNode* left;
+ 
+    // Right child of the
+    // current node
+    HuffmanTreeNode* right;
+ 
+    // Initializing the
+    // current node default constructor
+    HuffmanTreeNode(uint16_t arr_id, uint16_t asc_id,
+                    uint16_t freq)
+    {
+        array_id = arr_id;
+		ascii_id = asc_id;
+        item_freq = freq;
+        left = right = NULL;
+    }
+};
+
+//Referenced from Geeks for Geeks
+// Custom comparator class
+class Compare
+{
+public:
+    bool operator()(HuffmanTreeNode* a,
+                    HuffmanTreeNode* b)
+    {
+        // Defining priority on
+        // the basis of frequency, having lesser frequency item to be stored first
+        return a->item_freq > b->item_freq;
+    }
+};
+
 
 HUFFMAN_RESULT create_huff_node(uint16_t key, char* value, huff_node** node);
 HUFFMAN_RESULT create_huffman_hashtable(uint64_t size, Huffman_Hash_Table** table);
@@ -85,7 +133,12 @@ HUFFMAN_RESULT huffman_build_tree(Huffman_sort_node** root, Huffman_sort_node* d
 HUFFMAN_RESULT create_tree_node(Huffman_sort_node** node, uint16_t ascii_id, 
 Huffman_sort_node* left, Huffman_sort_node* right);
 void print_huffman_codes(Huffman_sort_node* root, int code[], int cur_pos);
-
+void free_input_sort_node(Huffman_sort_node*input_sort_data, uint16_t length);
+HUFFMAN_RESULT huffman_build_tree_pq(HuffmanTreeNode** root, 
+    std::priority_queue<HuffmanTreeNode*,
+    std::vector<HuffmanTreeNode*>,
+    Compare> pq);
+void print_huffman_codes_pq(HuffmanTreeNode* root, int code[], int cur_pos);
 /** Basic data Structures 
  * 1) Basic Node
  * 2) Array vector for characters and their frequency, Histogram (Class implementation of character and their frequency)

@@ -477,7 +477,8 @@ int huffman_encode(const unsigned char *bufin,
 	uint16_t key                       = 0;
 	Huffman_Hash_Table* hash_table     = NULL;
 	Huffman_sort_node* input_sort_data = NULL;
-	Huffman_sort_node* root            = NULL;
+	//Huffman_sort_node* root            = NULL;
+	HuffmanTreeNode* root              = NULL;
 	Huffman_sort_node* tmp_root        = NULL;
 	uint16_t           height          = 0;
 	int			   bin_sym[10];
@@ -499,15 +500,46 @@ int huffman_encode(const unsigned char *bufin,
 
 	huffman_hash_table_sort(input_sort_data, hash_table->count);
 
+	std::priority_queue<HuffmanTreeNode*,
+                   std::vector<HuffmanTreeNode*>,
+                   Compare> pq;
+
+	for(int i = 0; i < hash_table->count; i++)
+	{
+		HuffmanTreeNode* newNode
+            = new HuffmanTreeNode(input_sort_data[i].array_id, input_sort_data[i].ascii_id,
+			input_sort_data[i].item_count);
+        pq.push(newNode);
+	}
+
+	// free input sort node; no need of it after getting the Priority Queue.
+	free_input_sort_node(input_sort_data, hash_table->count);
+
+#if 0
+	while (!pq.empty())
+	{
+        HuffmanTreeNode* p = pq.top();
+        pq.pop();
+        std::cout << p->array_id << "-- " << p->ascii_id << " -- " << p->item_freq << std::endl;
+    }
+#endif
+
 	//Create Huffman code tree
-	huffman_build_tree(&root, input_sort_data, hash_table->count, &height);
-	tmp_root = root;
+	// Sorting Method, not currently working
+	//huffman_build_tree(&root, input_sort_data, hash_table->count, &height);
+	huffman_build_tree_pq(&root, pq);
+	std::cout << "huffman_build_tree root" << root <<"\n"; 
+	// Print Huffman Codes
+    int arr[25], top = 0;
+    print_huffman_codes_pq(root, arr, top);
+
+	// priority queue method
+	//tmp_root = root;
 	//bin_sym = (char*) malloc((height+1)* sizeof(char));
-	memset(bin_sym, 0, 10*sizeof(int) );
+	//memset(bin_sym, 0, 10*sizeof(int) );
 
 	//print_huffman_codes(tmp_root, bin_sym, cur_pos);
 	free_huffman_hash_table(hash_table);
-	free(input_sort_data);
 	return 0;
 }
 
@@ -522,6 +554,78 @@ uint16_t get_min(uint16_t i, uint16_t j)
 		return j;
 	}
 
+}
+
+HUFFMAN_RESULT huffman_build_tree_pq(HuffmanTreeNode** root, 
+    std::priority_queue<HuffmanTreeNode*,
+    std::vector<HuffmanTreeNode*>,
+    Compare> pq)
+{
+	HUFFMAN_RESULT retval = HUFFMAN_SUCCESS;
+	std::cout << "pq size = " << pq.size() << "\n";
+    while (pq.size() != 1) 
+	{
+        HuffmanTreeNode* left = pq.top();
+        // Remove node
+        pq.pop();
+        HuffmanTreeNode* right = pq.top();
+        pq.pop();
+		uint16_t count = left->item_freq + right->item_freq;
+		uint16_t id = 0;
+		uint16_t asc_id = HUFFMAN_INTERNAL_NODE_ID;
+        HuffmanTreeNode* node = new HuffmanTreeNode(id,asc_id,
+                                  count);
+        node->left = left;
+        node->right = right;
+ 
+        // Push back node
+        pq.push(node);
+    }
+ 
+    *root = pq.top();
+	std::cout<< "pq.top address" << pq.top() << "\n"; 
+	return retval;
+}
+
+void print_huffman_codes_pq(HuffmanTreeNode* root,
+                int arr[], int top)
+{
+    if(NULL == root)
+	{
+		std::cout << "Returning, Null root encountered\n";
+       return;
+    }
+	// Assign 0 to the left node
+    // and recur
+    if (root->left)
+	{
+        arr[top] = 0;
+        print_huffman_codes_pq(root->left,
+                   arr, top + 1);
+    }
+ 
+    // Assign 1 to the right
+    // node and recur
+    if (root->right) 
+	{
+        arr[top] = 1;
+        print_huffman_codes_pq(root->right, arr, top + 1);
+    }
+ 
+    // If this is a leaf node,
+    // then we print root->data
+ 
+    // We also print the code
+    // for this character from arr
+    if (NULL == root->left && NULL == root->right) 
+	{
+        std::cout << root->array_id << "--" <<root->ascii_id << "-> " << char(root->ascii_id) << "-- ";
+        for (int i = 0; i < top; i++) 
+		{
+            std::cout << arr[i];
+        }
+        std::cout << std:: endl;
+    }
 }
 
 HUFFMAN_RESULT huffman_build_tree(Huffman_sort_node** root, Huffman_sort_node* data, uint16_t n_elem, uint16_t* height)
@@ -625,7 +729,7 @@ Huffman_sort_node* left, Huffman_sort_node* right)
 		{
 			tmp_ptr->item_count = 1;
 		}
-		tmp_ptr->bin_symbol = NULL;
+		//tmp_ptr->bin_symbol = NULL;
 	}
 	*node = tmp_ptr;
 	return retval;
@@ -686,6 +790,19 @@ void print_huffman_codes(Huffman_sort_node* root, int code[], int cur_pos)
           std::cout << "root-data = " << (char)root->ascii_id << std::endl;
 		  print_symbols(code, cur_pos);
        }
+}
+
+void free_input_sort_node(Huffman_sort_node*input_sort_data, uint16_t length)
+{
+	if(input_sort_data)
+	{
+		for(int i = 0; i < length; i++)
+		{
+			input_sort_data[i].left = NULL;
+			input_sort_data[i].right = NULL;
+		}
+		free(input_sort_data);
+	}
 }
 /**
  * TODO Complete this function
