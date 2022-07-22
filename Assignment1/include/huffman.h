@@ -10,7 +10,7 @@ const uint64_t HashCapacity = 256;
 #define HUFFMAN_SUCCESS 0
 #define HUFFMAN_FAILURE -1
 #define HUFFMAN_EFAIL_MEMORY -2
-
+#define HUFFMAN_INTERNAL_NODE_ID	300
 typedef int8_t HUFFMAN_RESULT;
 /**
  * @param char*         A char to get the ASCII val.
@@ -56,6 +56,9 @@ typedef struct Huffman_sort_node_s
 	uint16_t array_id;
 	uint16_t ascii_id;
 	uint16_t item_count;
+	struct Huffman_sort_node_s* left;
+	struct Huffman_sort_node_s* right;
+	char* bin_symbol; //binary representation
 }Huffman_sort_node;
 
 HUFFMAN_RESULT create_huff_node(uint16_t key, char* value, huff_node** node);
@@ -78,6 +81,11 @@ HUFFMAN_RESULT huffman_hash_table_sort(Huffman_sort_node* table, uint16_t table_
 HUFFMAN_RESULT huffman_radix_sort(Huffman_sort_node* a, uint16_t n);
 HUFFMAN_RESULT huffman_count_sort(Huffman_sort_node*a, uint16_t n, uint16_t pos);
 uint16_t get_max_item_count(Huffman_sort_node*a, uint16_t n);
+HUFFMAN_RESULT huffman_build_tree(Huffman_sort_node** root, Huffman_sort_node* data, uint16_t n_elem, uint16_t* height);
+HUFFMAN_RESULT create_tree_node(Huffman_sort_node** node, uint16_t ascii_id, 
+Huffman_sort_node* left, Huffman_sort_node* right);
+void print_huffman_codes(Huffman_sort_node* root, int code[], int cur_pos);
+
 /** Basic data Structures 
  * 1) Basic Node
  * 2) Array vector for characters and their frequency, Histogram (Class implementation of character and their frequency)
