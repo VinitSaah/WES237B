@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <queue>
+#include <map>
 
 const uint64_t HashCapacity = 256;
 
@@ -12,6 +13,10 @@ const uint64_t HashCapacity = 256;
 #define HUFFMAN_FAILURE -1
 #define HUFFMAN_EFAIL_MEMORY -2
 #define HUFFMAN_INTERNAL_NODE_ID	300
+#define HUFFMAN_PSEOF				254
+#define HUFFMAN_MAX_STRLEN			27
+#define HEADER_START				16
+#define HEADER_END					15
 typedef int8_t HUFFMAN_RESULT;
 /**
  * @param char*         A char to get the ASCII val.
@@ -138,19 +143,23 @@ HUFFMAN_RESULT huffman_build_tree_pq(HuffmanTreeNode** root,
     std::priority_queue<HuffmanTreeNode*,
     std::vector<HuffmanTreeNode*>,
     Compare> pq);
-void print_huffman_codes_pq(HuffmanTreeNode* root, int code[], int cur_pos);
-/** Basic data Structures 
- * 1) Basic Node
- * 2) Array vector for characters and their frequency, Histogram (Class implementation of character and their frequency)
- * 3) Sorting: Count Sort
- * 4) Use priority queue to build tree
- * 4) Traverse to find code for each char
- * 5) Examing the source file again to output the code to the destination file. 
- * 3) Sorted Array Priority Queue
- */
- 
+//void print_huffman_codes_pq(HuffmanTreeNode* root, int code[], int cur_pos);
+void print_huffman_codes_pq(HuffmanTreeNode* root, char code[], int cur_pos);
+void store_huffman_code_map(HuffmanTreeNode* root, std::map<uint16_t, std::string>&huff_code_map, std::string str);
+void print_huffman_code_map(std::map<uint16_t, std::string>huff_code_map);
+/**
+ * Header start Ascii Val-> 16 (Syn)
+ *
+ * 
+ * Symbol format (Ascii, Frequency, Binary)
+ * Header End Ascii val->   15(Nak)
+ * Eg:Header+Payload
+ * syn(Ascii,Frequency,Binary), ()...Nak
+*/
+void create_huffman_code_header(std::map<uint16_t, std::string>huff_code_map, std::string &str);
 
-
+void encode_data(std::map<uint16_t,std::string>huff_code_map, std::string &str,
+const unsigned char* bufin, uint32_t bufinlen);
 /**
  * @param bufin       Array of characters to encode
  * @param bufinlen    Number of characters in the array

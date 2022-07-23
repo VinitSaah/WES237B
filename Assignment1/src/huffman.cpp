@@ -479,10 +479,12 @@ int huffman_encode(const unsigned char *bufin,
 	Huffman_sort_node* input_sort_data = NULL;
 	//Huffman_sort_node* root            = NULL;
 	HuffmanTreeNode* root              = NULL;
-	Huffman_sort_node* tmp_root        = NULL;
-	uint16_t           height          = 0;
-	int			   bin_sym[10];
-	uint16_t cur_pos = 0;
+	char* p_encoded_data                 = NULL;
+	//Huffman_sort_node* tmp_root        = NULL;
+	//uint16_t           height          = 0;
+	//int			   bin_sym[10];
+	//uint16_t cur_pos = 0;
+	
 	create_huffman_hashtable(HashCapacity, &hash_table);
 
 	for(int64_t i = 0; i< bufinlen;i++)
@@ -495,7 +497,7 @@ int huffman_encode(const unsigned char *bufin,
 	huffman_create_sorting_data(hash_table, &input_sort_data);
 	for(int i = 0; i< hash_table->count; i++)
 	{
-		std::cout << "Input Sort entries " << i << "=" << input_sort_data[i].item_count << std::endl;
+		std::cout << "Input entries " << i << "=" << input_sort_data[i].item_count << std::endl;
 	}
 
 	huffman_hash_table_sort(input_sort_data, hash_table->count);
@@ -503,7 +505,10 @@ int huffman_encode(const unsigned char *bufin,
 	std::priority_queue<HuffmanTreeNode*,
                    std::vector<HuffmanTreeNode*>,
                    Compare> pq;
-
+	//create a pseudo EOF so that we could mark end of decoding
+	HuffmanTreeNode* newNode
+            = new HuffmanTreeNode(HUFFMAN_PSEOF, HUFFMAN_PSEOF,1); //character with ASCII value 254, part of extended ASCII table.
+        pq.push(newNode);
 	for(int i = 0; i < hash_table->count; i++)
 	{
 		HuffmanTreeNode* newNode
@@ -527,21 +532,61 @@ int huffman_encode(const unsigned char *bufin,
 	//Create Huffman code tree
 	// Sorting Method, not currently working
 	//huffman_build_tree(&root, input_sort_data, hash_table->count, &height);
+
+	//using priority queue method
 	huffman_build_tree_pq(&root, pq);
 	std::cout << "huffman_build_tree root" << root <<"\n"; 
-	// Print Huffman Codes
-    int arr[25], top = 0;
-    print_huffman_codes_pq(root, arr, top);
 
-	// priority queue method
-	//tmp_root = root;
-	//bin_sym = (char*) malloc((height+1)* sizeof(char));
-	//memset(bin_sym, 0, 10*sizeof(int) );
+    //int arr[HUFFMAN_MAX_STRLEN] = {0};
+	char arr[HUFFMAN_MAX_STRLEN];
+	memset(arr, 0, HUFFMAN_MAX_STRLEN*sizeof(char));
+	int top = 0;
+    //print_huffman_codes_pq(root, arr, top);
+	print_huffman_codes_pq(root, arr, top);
 
-	//print_huffman_codes(tmp_root, bin_sym, cur_pos);
+	// Store Encoding Map
+	std::map<uint16_t, std::string> code_map;
+	store_huffman_code_map(root, code_map, "");
+	print_huffman_code_map(code_map);
+
+	std::string header;
+	create_huffman_code_header(code_map,header);
+	//std::cout << header << std::endl;
+
+	//Create Encoded data
+	encode_data(code_map, header, bufin,bufinlen);
+	std::cout << "Header\n";
+	std::cout << header << std::endl;
+
+	uint16_t coded_size = header.length();
+	std::cout<< "coded size\n"<<coded_size << std::endl;
+    uint16_t string_size = sizeof(char)*(coded_size+1);
+	std::cout << "string_size" << string_size << std::endl;
+	p_encoded_data = (char*)malloc(sizeof(char)*(coded_size+1));
+	const char* coded_data = header.c_str();
+#if 0
+    for (int i = 0; i <coded_size+1;i++)
+	{
+		//std :: cout << *(coded_data+i);
+		std :: cout << coded_data[i];
+	}
+#endif
+	//std::cout << std::endl;
+	memcpy(p_encoded_data,coded_data, coded_size);
+	//p_encoded_data[coded_size] = '\0';
+	std::cout << "Footer\n";
+	std::cout<< p_encoded_data<<std::endl;
+	int strSize = strlen(p_encoded_data);
+
+	//*pbufout = (unsigned char*)coded_data;
+	*pbufout = (unsigned char*)p_encoded_data;
+	//*pbufoutlen = coded_size+1;
+	*pbufoutlen = coded_size;
+
 	free_huffman_hash_table(hash_table);
 	return 0;
 }
+
 
 uint16_t get_min(uint16_t i, uint16_t j)
 {	
@@ -586,9 +631,9 @@ HUFFMAN_RESULT huffman_build_tree_pq(HuffmanTreeNode** root,
 	std::cout<< "pq.top address" << pq.top() << "\n"; 
 	return retval;
 }
+//void print_huffman_codes_pq(HuffmanTreeNode* root,int arr[], int top)
 
-void print_huffman_codes_pq(HuffmanTreeNode* root,
-                int arr[], int top)
+void print_huffman_codes_pq(HuffmanTreeNode* root,char arr[], int top)
 {
     if(NULL == root)
 	{
@@ -599,7 +644,7 @@ void print_huffman_codes_pq(HuffmanTreeNode* root,
     // and recur
     if (root->left)
 	{
-        arr[top] = 0;
+        arr[top] = '0';
         print_huffman_codes_pq(root->left,
                    arr, top + 1);
     }
@@ -608,7 +653,7 @@ void print_huffman_codes_pq(HuffmanTreeNode* root,
     // node and recur
     if (root->right) 
 	{
-        arr[top] = 1;
+        arr[top] = '1';
         print_huffman_codes_pq(root->right, arr, top + 1);
     }
  
@@ -626,6 +671,92 @@ void print_huffman_codes_pq(HuffmanTreeNode* root,
         }
         std::cout << std:: endl;
     }
+}
+
+void store_huffman_code_map(HuffmanTreeNode* root, std::map<uint16_t, std::string>&huff_code_map, std::string str)
+{
+	if (root==NULL)
+	{
+		return;
+	} 
+	if (root->ascii_id != HUFFMAN_INTERNAL_NODE_ID)
+	{
+		huff_code_map[root->ascii_id]=str; 
+	}
+	store_huffman_code_map(root->left, huff_code_map, str + "0"); 
+	store_huffman_code_map(root->right, huff_code_map, str + "1"); 
+}
+
+void print_huffman_code_map(std::map<uint16_t, std::string>huff_code_map)
+{
+	std:: cout << "Ascii value " << " --- " << " Symbol " << " -- " << " Code " << std::endl;
+	std::map<uint16_t, std::string>::iterator itr;
+	for(itr = huff_code_map.begin(); itr != huff_code_map.end(); ++itr)
+	{
+		std:: cout << itr->first << "		" << (char)itr->first << "		" <<itr->second << std::endl;
+	}
+}
+
+void create_huffman_code_header(std::map<uint16_t, std::string>huff_code_map, std::string &str)
+{
+	/** Header format
+	 * Header start Ascii Val-> 16 (Syn)
+	 *
+	 * 
+	 * Symbol format (Ascii, *Frequency*, Binary) // frequency is optional
+	 * Header End Ascii val->   15(Nak)
+	 * Header+Payload
+	 * syn(Ascii,Frequency,Binary), ()...Nak
+	 */
+	int h_st = HEADER_START;
+	int h_end = HEADER_END;
+	str.push_back((char)h_st);
+	//std::cout << str;
+	std::map<uint16_t, std::string>::iterator itr;
+	const char* p_symbol = NULL;
+	for(itr = huff_code_map.begin(); itr != huff_code_map.end(); ++itr)
+	{
+		str.push_back('(');
+		str.push_back((char)itr->first);
+		str.push_back(',');
+		p_symbol = itr->second.c_str();
+		for(int i = 0; i < itr->second.capacity();i++)
+		{
+			str.push_back(*(p_symbol+i));
+		}
+		str.push_back(')');
+		//std::cout << str;
+	}
+	str.push_back((char)h_end);
+}
+
+void encode_data(std::map<uint16_t,std::string>huff_code_map, std::string &str, 
+const unsigned char* bufin, uint32_t bufinlen)
+{
+	const char* p_symbol = NULL;
+	//read byte by byte, get ascii value, get equivalent binary, convert, store
+	std::map<uint16_t, std::string>::iterator itr;
+	uint16_t marker = HUFFMAN_PSEOF;
+	for(int i = 0; i < bufinlen;i++)
+	{
+        itr = huff_code_map.find((uint16_t)bufin[i]);
+		p_symbol = itr->second.c_str();
+		for(int i = 0; i < itr->second.capacity();i++)
+		{
+			str.push_back(*(p_symbol+i));
+		}
+	}
+	
+	//append marker so that it could be used while decoding
+	itr = huff_code_map.find(marker);
+	//append '\0', for string completion
+	p_symbol = itr->second.c_str();
+	for(int i = 0; i < itr->second.capacity();i++)
+	{
+		str.push_back(*(p_symbol+i));
+	}
+	//std::cout << str << std::endl;
+	return;
 }
 
 HUFFMAN_RESULT huffman_build_tree(Huffman_sort_node** root, Huffman_sort_node* data, uint16_t n_elem, uint16_t* height)
