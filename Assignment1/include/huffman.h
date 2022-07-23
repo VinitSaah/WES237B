@@ -193,9 +193,7 @@ HUFFMAN_RESULT huffman_decode_create_map(const unsigned char* pstr,
     std::string>&huff_code_map,
     uint16_t* idx);
 
-HUFFMAN_RESULT huffman_decode_create_tree(const unsigned char* pstr, 
-    uint16_t inlength, std::map<uint16_t, 
-    std::string>huff_code_map,
-    uint16_t* idx);
+HUFFMAN_RESULT huffman_decode_create_tree(HuffmanTreeNode** root,
+std::map<uint16_t, std::string>huff_code_map);
 
 #endif

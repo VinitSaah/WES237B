@@ -936,18 +936,30 @@ int huffman_decode(const unsigned char *bufin,
 						  unsigned char **pbufout,
 						  unsigned int *pbufoutlen)
 {
+	HuffmanTreeNode* root              = NULL;
 	//create ascii value and symbol map.
 	std::map<uint16_t, std::string>code_map;
 	uint16_t cur_idx = 0;
+
 	huffman_decode_create_map(bufin, bufinlen, code_map, &cur_idx);
 	print_huffman_code_map(code_map);
+	
 	//create the huffman coding tree
+	huffman_decode_create_tree(&root, code_map);
 
+	char arr[HUFFMAN_MAX_STRLEN];
+	memset(arr, 0, HUFFMAN_MAX_STRLEN*sizeof(char));
+	int top = 0;
+	print_huffman_codes_pq(root, arr, top);
+	
 	//decode the input.
 	return 0;
 }
 
-HUFFMAN_RESULT huffman_decode_create_map(const unsigned char* pstr, uint16_t inlength, std::map<uint16_t, std::string>&huff_code_map, uint16_t* cur_idx)
+HUFFMAN_RESULT huffman_decode_create_map(const unsigned char* pstr,
+ uint16_t inlength, std::map<uint16_t, 
+ std::string>&huff_code_map, 
+ uint16_t* cur_idx)
 {
 	HUFFMAN_RESULT retval = HUFFMAN_SUCCESS;
 
@@ -982,12 +994,50 @@ HUFFMAN_RESULT huffman_decode_create_map(const unsigned char* pstr, uint16_t inl
 	return retval;
 }
 
-HUFFMAN_RESULT huffman_decode_create_tree(const unsigned char* pstr, 
-    uint16_t inlength, std::map<uint16_t, 
-    std::string>huff_code_map,
-    uint16_t* idx)
+HUFFMAN_RESULT huffman_decode_create_tree(HuffmanTreeNode** root, 
+    std::map<uint16_t, std::string>huff_code_map)
 {
 	HUFFMAN_RESULT retval = HUFFMAN_SUCCESS;
+	HuffmanTreeNode* tree_root = NULL;
+	std::map<uint16_t, std::string>::iterator itr;
+
+	//create 1st root
+	uint16_t id = 0;
+	uint16_t asc_id = HUFFMAN_INTERNAL_NODE_ID;
+	uint16_t count = 0;
+	HuffmanTreeNode* node = new HuffmanTreeNode(id,asc_id,count);
+	tree_root = node;
+
+	for(itr = huff_code_map.begin(); itr != huff_code_map.end(); ++itr)
+	{
+		node = tree_root;
+		for(int i = 0; i < itr->second.length(); ++i)
+		{
+			if(itr->second[i] ==  '0')
+			{
+				if(node->left == NULL)
+				{
+					node->left = new HuffmanTreeNode(id,asc_id,count);
+				}
+				node = node->left;
+			}
+			else if(itr->second[i] ==  '1')
+			{
+				if(node->right == NULL)
+				{
+					node->right = new HuffmanTreeNode(id,asc_id,count);
+				}
+				node = node->right;
+			}
+			else
+			{
+				std::cout << "Incorrect symbol" << (int)itr->second[i]<<"\n";
+				retval = HUFFMAN_SUCCESS;
+			}
+		}
+		node->ascii_id = (uint16_t)itr->first;
+	}
+	*root = tree_root;
 	return retval;
 }
 
