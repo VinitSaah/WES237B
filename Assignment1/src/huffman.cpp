@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <iostream>
 
+
 uint16_t hash_function(char* str)
 {
 	uint16_t ascii_val = 0;
@@ -560,27 +561,18 @@ int huffman_encode(const unsigned char *bufin,
 
 	uint16_t coded_size = header.length();
 	std::cout<< "coded size\n"<<coded_size << std::endl;
-    uint16_t string_size = sizeof(char)*(coded_size+1);
+    uint16_t string_size = sizeof(char)*(coded_size);
 	std::cout << "string_size" << string_size << std::endl;
-	p_encoded_data = (char*)malloc(sizeof(char)*(coded_size+1));
+	p_encoded_data = (char*)malloc(sizeof(char)*(coded_size));
 	const char* coded_data = header.c_str();
-#if 0
-    for (int i = 0; i <coded_size+1;i++)
-	{
-		//std :: cout << *(coded_data+i);
-		std :: cout << coded_data[i];
-	}
-#endif
+
 	//std::cout << std::endl;
-	memcpy(p_encoded_data,coded_data, coded_size);
-	//p_encoded_data[coded_size] = '\0';
+	strncpy(p_encoded_data,coded_data, coded_size);
 	std::cout << "Footer\n";
 	std::cout<< p_encoded_data<<std::endl;
-	int strSize = strlen(p_encoded_data);
 
-	//*pbufout = (unsigned char*)coded_data;
 	*pbufout = (unsigned char*)p_encoded_data;
-	//*pbufoutlen = coded_size+1;
+
 	*pbufoutlen = coded_size;
 
 	free_huffman_hash_table(hash_table);
@@ -708,9 +700,9 @@ void create_huffman_code_header(std::map<uint16_t, std::string>huff_code_map, st
 	 * Header+Payload
 	 * syn(Ascii,Frequency,Binary), ()...Nak
 	 */
-	int h_st = HEADER_START;
-	int h_end = HEADER_END;
-	str.push_back((char)h_st);
+	char h_st = HEADER_START;
+	char h_end = HEADER_END;
+	str.push_back(h_st);
 	//std::cout << str;
 	std::map<uint16_t, std::string>::iterator itr;
 	const char* p_symbol = NULL;
@@ -720,14 +712,14 @@ void create_huffman_code_header(std::map<uint16_t, std::string>huff_code_map, st
 		str.push_back((char)itr->first);
 		str.push_back(',');
 		p_symbol = itr->second.c_str();
-		for(int i = 0; i < itr->second.capacity();i++)
+		for(int i = 0; i < itr->second.length();i++)
 		{
 			str.push_back(*(p_symbol+i));
 		}
 		str.push_back(')');
 		//std::cout << str;
 	}
-	str.push_back((char)h_end);
+	str.push_back(h_end);
 }
 
 void encode_data(std::map<uint16_t,std::string>huff_code_map, std::string &str, 
@@ -741,7 +733,7 @@ const unsigned char* bufin, uint32_t bufinlen)
 	{
         itr = huff_code_map.find((uint16_t)bufin[i]);
 		p_symbol = itr->second.c_str();
-		for(int i = 0; i < itr->second.capacity();i++)
+		for(int i = 0; i < itr->second.length();i++)
 		{
 			str.push_back(*(p_symbol+i));
 		}
@@ -751,13 +743,14 @@ const unsigned char* bufin, uint32_t bufinlen)
 	itr = huff_code_map.find(marker);
 	//append '\0', for string completion
 	p_symbol = itr->second.c_str();
-	for(int i = 0; i < itr->second.capacity();i++)
+	for(int i = 0; i < itr->second.length();i++)
 	{
 		str.push_back(*(p_symbol+i));
 	}
 	//std::cout << str << std::endl;
 	return;
 }
+
 
 HUFFMAN_RESULT huffman_build_tree(Huffman_sort_node** root, Huffman_sort_node* data, uint16_t n_elem, uint16_t* height)
 {
@@ -943,5 +936,58 @@ int huffman_decode(const unsigned char *bufin,
 						  unsigned char **pbufout,
 						  unsigned int *pbufoutlen)
 {
+	//create ascii value and symbol map.
+	std::map<uint16_t, std::string>code_map;
+	uint16_t cur_idx = 0;
+	huffman_decode_create_map(bufin, bufinlen, code_map, &cur_idx);
+	print_huffman_code_map(code_map);
+	//create the huffman coding tree
+
+	//decode the input.
 	return 0;
 }
+
+HUFFMAN_RESULT huffman_decode_create_map(const unsigned char* pstr, uint16_t inlength, std::map<uint16_t, std::string>&huff_code_map, uint16_t* cur_idx)
+{
+	HUFFMAN_RESULT retval = HUFFMAN_SUCCESS;
+
+	/** Parse char by char and create encode map */
+	for(int i = 0; i < inlength; i++)
+	{
+		if(pstr[i] == '{') //start of header
+		{
+			std::cout << "Header Start \n";
+			continue;
+		}
+		if(pstr[i] == '(')
+		{
+			std :: string bin_sym = ""; 
+			for(int j = i+3;;j++ )
+			{
+				if(pstr[j] == ')')
+				{
+					break;
+				}
+				
+			    bin_sym.push_back(pstr[j]);
+			}
+			huff_code_map[pstr[i+1]] = bin_sym; 
+		}
+		if(pstr[i] == '}')
+		{
+			std::cout << "Header creation successful\n";
+			break;
+		}
+	}
+	return retval;
+}
+
+HUFFMAN_RESULT huffman_decode_create_tree(const unsigned char* pstr, 
+    uint16_t inlength, std::map<uint16_t, 
+    std::string>huff_code_map,
+    uint16_t* idx)
+{
+	HUFFMAN_RESULT retval = HUFFMAN_SUCCESS;
+	return retval;
+}
+

@@ -15,8 +15,8 @@ const uint64_t HashCapacity = 256;
 #define HUFFMAN_INTERNAL_NODE_ID	300
 #define HUFFMAN_PSEOF				254
 #define HUFFMAN_MAX_STRLEN			27
-#define HEADER_START				16
-#define HEADER_END					15
+#define HEADER_START				'{'
+#define HEADER_END					'}'
 typedef int8_t HUFFMAN_RESULT;
 /**
  * @param char*         A char to get the ASCII val.
@@ -186,5 +186,16 @@ int huffman_decode(const unsigned char *bufin,
   		   uint32_t bufinlen,
 		   unsigned char **bufout,
 		   uint32_t *pbufoutlen);
+
+
+HUFFMAN_RESULT huffman_decode_create_map(const unsigned char* pstr, 
+    uint16_t inlength, std::map<uint16_t, 
+    std::string>&huff_code_map,
+    uint16_t* idx);
+
+HUFFMAN_RESULT huffman_decode_create_tree(const unsigned char* pstr, 
+    uint16_t inlength, std::map<uint16_t, 
+    std::string>huff_code_map,
+    uint16_t* idx);
 
 #endif
