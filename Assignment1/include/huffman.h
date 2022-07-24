@@ -17,6 +17,7 @@ const uint64_t HashCapacity = 256;
 #define HUFFMAN_MAX_STRLEN			27
 #define HEADER_START				'{'
 #define HEADER_END					'}'
+
 typedef int8_t HUFFMAN_RESULT;
 /**
  * @param char*         A char to get the ASCII val.
@@ -89,13 +90,15 @@ public:
  
     // Initializing the
     // current node default constructor
-    HuffmanTreeNode(uint16_t arr_id, uint16_t asc_id,
+    HuffmanTreeNode(uint16_t arr_id, 
+                    uint16_t asc_id,
                     uint16_t freq)
     {
         array_id = arr_id;
 		ascii_id = asc_id;
         item_freq = freq;
-        left = right = NULL;
+        left = NULL;
+        right = NULL;
     }
 };
 
@@ -147,6 +150,7 @@ HUFFMAN_RESULT huffman_build_tree_pq(HuffmanTreeNode** root,
 void print_huffman_codes_pq(HuffmanTreeNode* root, char code[], int cur_pos);
 void store_huffman_code_map(HuffmanTreeNode* root, std::map<uint16_t, std::string>&huff_code_map, std::string str);
 void print_huffman_code_map(std::map<uint16_t, std::string>huff_code_map);
+void print_huffman_decode_map(std::map< std::string, uint16_t>huff_decode_map);
 /**
  * Header start Ascii Val-> 16 (Syn)
  *
@@ -190,10 +194,18 @@ int huffman_decode(const unsigned char *bufin,
 
 HUFFMAN_RESULT huffman_decode_create_map(const unsigned char* pstr, 
     uint16_t inlength, std::map<uint16_t, 
-    std::string>&huff_code_map,
+    std::string>&huff_code_map,std::map<std::string,
+    uint16_t>&huff_decode_map, 
     uint16_t* idx);
 
 HUFFMAN_RESULT huffman_decode_create_tree(HuffmanTreeNode** root,
 std::map<uint16_t, std::string>huff_code_map);
+
+HUFFMAN_RESULT huffman_decode_input(HuffmanTreeNode* root,
+    const unsigned char *bufin,
+    uint32_t bufinlen,
+    //uint16_t header_lenght,
+    unsigned char **bufout,
+    uint32_t *pbufoutlen);
 
 #endif

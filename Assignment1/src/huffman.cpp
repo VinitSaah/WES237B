@@ -506,10 +506,12 @@ int huffman_encode(const unsigned char *bufin,
 	std::priority_queue<HuffmanTreeNode*,
                    std::vector<HuffmanTreeNode*>,
                    Compare> pq;
+#if 0
 	//create a pseudo EOF so that we could mark end of decoding
 	HuffmanTreeNode* newNode
             = new HuffmanTreeNode(HUFFMAN_PSEOF, HUFFMAN_PSEOF,1); //character with ASCII value 254, part of extended ASCII table.
         pq.push(newNode);
+#endif
 	for(int i = 0; i < hash_table->count; i++)
 	{
 		HuffmanTreeNode* newNode
@@ -536,7 +538,7 @@ int huffman_encode(const unsigned char *bufin,
 
 	//using priority queue method
 	huffman_build_tree_pq(&root, pq);
-	std::cout << "huffman_build_tree root" << root <<"\n"; 
+	std::cout << "huffman_tree root 1 " << root <<"\n"; 
 
     //int arr[HUFFMAN_MAX_STRLEN] = {0};
 	char arr[HUFFMAN_MAX_STRLEN];
@@ -544,12 +546,14 @@ int huffman_encode(const unsigned char *bufin,
 	int top = 0;
     //print_huffman_codes_pq(root, arr, top);
 	print_huffman_codes_pq(root, arr, top);
+	//std::cout << "huffman_tree root 2 " << root <<"\n"; 
 
 	// Store Encoding Map
 	std::map<uint16_t, std::string> code_map;
 	store_huffman_code_map(root, code_map, "");
+	//std::cout << "huffman_tree root 3 " << root <<"\n"; 
 	print_huffman_code_map(code_map);
-
+	
 	std::string header;
 	create_huffman_code_header(code_map,header);
 	//std::cout << header << std::endl;
@@ -562,20 +566,25 @@ int huffman_encode(const unsigned char *bufin,
 	uint16_t coded_size = header.length();
 	std::cout<< "coded size\n"<<coded_size << std::endl;
     uint16_t string_size = sizeof(char)*(coded_size);
-	std::cout << "string_size" << string_size << std::endl;
+	std::cout << "string_size\n" << string_size << std::endl;
 	p_encoded_data = (char*)malloc(sizeof(char)*(coded_size));
 	const char* coded_data = header.c_str();
 
 	//std::cout << std::endl;
-	strncpy(p_encoded_data,coded_data, coded_size);
+	for(int i = 0; i < coded_size ; i++)
+	{
+		p_encoded_data[i] = coded_data[i];
+		std::cout<< p_encoded_data[i];
+	}
+	std::cout << "\n";
 	std::cout << "Footer\n";
-	std::cout<< p_encoded_data<<std::endl;
+	
 
 	*pbufout = (unsigned char*)p_encoded_data;
-
 	*pbufoutlen = coded_size;
 
 	free_huffman_hash_table(hash_table);
+
 	return 0;
 }
 
@@ -608,7 +617,7 @@ HUFFMAN_RESULT huffman_build_tree_pq(HuffmanTreeNode** root,
         HuffmanTreeNode* right = pq.top();
         pq.pop();
 		uint16_t count = left->item_freq + right->item_freq;
-		uint16_t id = 0;
+		uint16_t id = 0;//fill 0 not used anywhere
 		uint16_t asc_id = HUFFMAN_INTERNAL_NODE_ID;
         HuffmanTreeNode* node = new HuffmanTreeNode(id,asc_id,
                                   count);
@@ -620,13 +629,14 @@ HUFFMAN_RESULT huffman_build_tree_pq(HuffmanTreeNode** root,
     }
  
     *root = pq.top();
-	std::cout<< "pq.top address" << pq.top() << "\n"; 
+	//std::cout<< "pq.top address" << pq.top() << "\n"; 
 	return retval;
 }
 //void print_huffman_codes_pq(HuffmanTreeNode* root,int arr[], int top)
 
 void print_huffman_codes_pq(HuffmanTreeNode* root,char arr[], int top)
 {
+	HuffmanTreeNode* node = root; 
     if(NULL == root)
 	{
 		std::cout << "Returning, Null root encountered\n";
@@ -634,19 +644,19 @@ void print_huffman_codes_pq(HuffmanTreeNode* root,char arr[], int top)
     }
 	// Assign 0 to the left node
     // and recur
-    if (root->left)
+    if (node->left)
 	{
         arr[top] = '0';
-        print_huffman_codes_pq(root->left,
+        print_huffman_codes_pq(node->left,
                    arr, top + 1);
     }
  
     // Assign 1 to the right
     // node and recur
-    if (root->right) 
+    if (node->right) 
 	{
         arr[top] = '1';
-        print_huffman_codes_pq(root->right, arr, top + 1);
+        print_huffman_codes_pq(node->right, arr, top + 1);
     }
  
     // If this is a leaf node,
@@ -654,9 +664,9 @@ void print_huffman_codes_pq(HuffmanTreeNode* root,char arr[], int top)
  
     // We also print the code
     // for this character from arr
-    if (NULL == root->left && NULL == root->right) 
+    if (NULL == node->left && NULL == node->right) 
 	{
-        std::cout << root->array_id << "--" <<root->ascii_id << "-> " << char(root->ascii_id) << "-- ";
+        std::cout << node->array_id << "--" <<node->ascii_id << "-> " << char(node->ascii_id) << "-- ";
         for (int i = 0; i < top; i++) 
 		{
             std::cout << arr[i];
@@ -671,9 +681,9 @@ void store_huffman_code_map(HuffmanTreeNode* root, std::map<uint16_t, std::strin
 	{
 		return;
 	} 
-	if (root->ascii_id != HUFFMAN_INTERNAL_NODE_ID)
+	if (root->ascii_id != HUFFMAN_INTERNAL_NODE_ID && root->left == NULL && root->right == NULL)
 	{
-		huff_code_map[root->ascii_id]=str; 
+		huff_code_map[root->ascii_id]=str;
 	}
 	store_huffman_code_map(root->left, huff_code_map, str + "0"); 
 	store_huffman_code_map(root->right, huff_code_map, str + "1"); 
@@ -686,6 +696,17 @@ void print_huffman_code_map(std::map<uint16_t, std::string>huff_code_map)
 	for(itr = huff_code_map.begin(); itr != huff_code_map.end(); ++itr)
 	{
 		std:: cout << itr->first << "		" << (char)itr->first << "		" <<itr->second << std::endl;
+	}
+}
+
+void print_huffman_decode_map(std::map<std::string, uint16_t>huff_decode_map)
+{
+	std::cout << "Generated Decode Table\n";
+	std:: cout << "Symbol " << " ------ " << " Ascii symbol" << std::endl;
+	std::map<std::string, uint16_t>::iterator itr;
+	for(itr = huff_decode_map.begin(); itr != huff_decode_map.end(); ++itr)
+	{
+		std:: cout << itr->first << "		" <<(char)itr->second << std::endl;
 	}
 }
 
@@ -728,7 +749,7 @@ const unsigned char* bufin, uint32_t bufinlen)
 	const char* p_symbol = NULL;
 	//read byte by byte, get ascii value, get equivalent binary, convert, store
 	std::map<uint16_t, std::string>::iterator itr;
-	uint16_t marker = HUFFMAN_PSEOF;
+	//uint16_t marker = HUFFMAN_PSEOF;
 	for(int i = 0; i < bufinlen;i++)
 	{
         itr = huff_code_map.find((uint16_t)bufin[i]);
@@ -738,15 +759,16 @@ const unsigned char* bufin, uint32_t bufinlen)
 			str.push_back(*(p_symbol+i));
 		}
 	}
-	
+
+#if 0
 	//append marker so that it could be used while decoding
 	itr = huff_code_map.find(marker);
-	//append '\0', for string completion
 	p_symbol = itr->second.c_str();
 	for(int i = 0; i < itr->second.length();i++)
 	{
 		str.push_back(*(p_symbol+i));
 	}
+#endif
 	//std::cout << str << std::endl;
 	return;
 }
@@ -936,29 +958,36 @@ int huffman_decode(const unsigned char *bufin,
 						  unsigned char **pbufout,
 						  unsigned int *pbufoutlen)
 {
+	std::cout << "*********  Decode   *******\n";
 	HuffmanTreeNode* root              = NULL;
 	//create ascii value and symbol map.
 	std::map<uint16_t, std::string>code_map;
+	std::map<std::string,uint16_t>decode_map;
 	uint16_t cur_idx = 0;
 
-	huffman_decode_create_map(bufin, bufinlen, code_map, &cur_idx);
+	huffman_decode_create_map(bufin, bufinlen, code_map, decode_map,&cur_idx);
 	print_huffman_code_map(code_map);
+	print_huffman_decode_map(decode_map);
 	
 	//create the huffman coding tree
 	huffman_decode_create_tree(&root, code_map);
+	std::cout<<"Decoder root address = " << root << std::endl;
 
 	char arr[HUFFMAN_MAX_STRLEN];
 	memset(arr, 0, HUFFMAN_MAX_STRLEN*sizeof(char));
 	int top = 0;
 	print_huffman_codes_pq(root, arr, top);
+	//std::cout<<"Decoder root address after print = " << root << std::endl;
 	
 	//decode the input.
+	huffman_decode_input(root,&bufin[0],bufinlen, pbufout, pbufoutlen);
 	return 0;
 }
 
 HUFFMAN_RESULT huffman_decode_create_map(const unsigned char* pstr,
  uint16_t inlength, std::map<uint16_t, 
- std::string>&huff_code_map, 
+ std::string>&huff_code_map,
+ std::map<std::string, uint16_t>&huff_decode_map, 
  uint16_t* cur_idx)
 {
 	HUFFMAN_RESULT retval = HUFFMAN_SUCCESS;
@@ -981,13 +1010,15 @@ HUFFMAN_RESULT huffman_decode_create_map(const unsigned char* pstr,
 					break;
 				}
 				
-			    bin_sym.push_back(pstr[j]);
+			    bin_sym.push_back((char)pstr[j]);
 			}
-			huff_code_map[pstr[i+1]] = bin_sym; 
+			huff_code_map[pstr[i+1]] = bin_sym;
+			huff_decode_map[bin_sym] = pstr[i+1];
 		}
 		if(pstr[i] == '}')
 		{
 			std::cout << "Header creation successful\n";
+			*cur_idx = i;
 			break;
 		}
 	}
@@ -1007,10 +1038,12 @@ HUFFMAN_RESULT huffman_decode_create_tree(HuffmanTreeNode** root,
 	uint16_t count = 0;
 	HuffmanTreeNode* node = new HuffmanTreeNode(id,asc_id,count);
 	tree_root = node;
-
+	std::cout << "Creating Decoder Tree , node address = " << node  << std::endl;
 	for(itr = huff_code_map.begin(); itr != huff_code_map.end(); ++itr)
 	{
 		node = tree_root;
+		//std::cout << "Going back to Root Node address = " << node <<std::endl;
+		//std::cout << "Root Ascii " << node->ascii_id << std::endl;
 		for(int i = 0; i < itr->second.length(); ++i)
 		{
 			if(itr->second[i] ==  '0')
@@ -1018,26 +1051,116 @@ HUFFMAN_RESULT huffman_decode_create_tree(HuffmanTreeNode** root,
 				if(node->left == NULL)
 				{
 					node->left = new HuffmanTreeNode(id,asc_id,count);
+					//std::cout << "Creating new intermediate node  = " << node->left << "\n";
+				}
+				else
+				{
+					//std::cout << "Intermediate node exist = " << node->left << "\n";
 				}
 				node = node->left;
+				//std::cout << "Intermediate address " << node << "Intermediate Ascii " << node->ascii_id << std::endl;
 			}
 			else if(itr->second[i] ==  '1')
 			{
 				if(node->right == NULL)
 				{
 					node->right = new HuffmanTreeNode(id,asc_id,count);
+					//std::cout << "Creating new intermediate node  = " << node->right << "\n";
+				}
+				else
+				{
+					//std::cout << "Intermediate node exist = " << node->right << "\n";
 				}
 				node = node->right;
+				//std::cout << "Intermediate address " << node << "Intermediate Ascii " << node->ascii_id << std::endl;
 			}
 			else
 			{
 				std::cout << "Incorrect symbol" << (int)itr->second[i]<<"\n";
-				retval = HUFFMAN_SUCCESS;
+				retval = HUFFMAN_FAILURE;
 			}
 		}
-		node->ascii_id = (uint16_t)itr->first;
+		node->ascii_id = itr->first;
+		//std::cout << "Leaf address " << node << " Leaf Ascii " << node->ascii_id << std::endl;
 	}
 	*root = tree_root;
+	return retval;
+}
+
+HUFFMAN_RESULT huffman_decode_input(HuffmanTreeNode* root,
+    	const unsigned char *bufin,
+    	uint32_t bufinlen,
+		//uint32_t header_length,
+    	unsigned char **bufout,
+    	uint32_t *pbufoutlen)
+{
+	HUFFMAN_RESULT retval = HUFFMAN_SUCCESS;
+	HuffmanTreeNode* cur_node = NULL;
+    HuffmanTreeNode* tree_root = NULL;
+	unsigned char cur_bit = '\0';
+	uint16_t cur_pos = 0;
+	std::cout << bufinlen << std::endl;
+	//Iterate over input to cross header
+	for(int i = 0; i < bufinlen; i++)
+	{
+		if(bufin[i] == '}')
+		{
+			std:: cout << "Header Parsed " << bufin[i]<< std::endl;
+			cur_pos = i;
+			break;
+		}
+
+	}
+	cur_pos++; //start of symbols;
+	std::cout << "Bit stream to be decoded \n";
+	for(int i = cur_pos; i < bufinlen ; i++)
+	{
+		std :: cout << bufin[i];
+	} 
+	//std::cout << bufin[cur_pos] << std::endl;
+	std::cout << std::endl;
+
+	tree_root = root;
+	std::cout << "****Decoding start*****\n";
+	std::cout << "Root address = " << root << std::endl;
+	cur_node = tree_root;
+	for(uint16_t idx = cur_pos;idx < bufinlen; idx++)
+	{	
+		std::string str = "";
+		cur_bit = bufin[idx];	
+		//std :: cout << "Current bit = " << cur_bit << std::endl;
+		if (cur_bit == '0')
+		{
+			//std :: cout << "Left--"; 
+        	cur_node = cur_node->left;
+			str.push_back('0');
+		}
+      	else if (cur_bit == '1')
+		{
+			//std :: cout << "Right--"; 
+			cur_node = cur_node->right;
+			str.push_back('1');
+		}
+      	else
+		{
+        	std::cerr << "Undefined bit: " << cur_bit << " -- check input\n";
+				//break;
+		}
+		if(NULL == (cur_node->left) && NULL == (cur_node->right))
+		{
+			//std::cout << std::endl;
+			//std::cout << "Reached a leaf" <<std::endl;
+			//std::cout << "cur_node->ascii_id" << std::endl;
+			//std::cout <<"Getting back to root " << root << std::endl;
+			std::cout << cur_node->ascii_id;
+			cur_node = tree_root;
+		}
+		else
+		{
+			//std::cout << cur_node << " child " << cur_node->left  << "--" <<  cur_node->right<< std::endl;
+		}
+	}
+	//*bufout = (unsigned char**) malloc(sizeof(unsigned char*)* )
 	return retval;
 }
 
