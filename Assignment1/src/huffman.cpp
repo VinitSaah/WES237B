@@ -401,12 +401,12 @@ int huffman_encode(const unsigned char *bufin,
 	std::priority_queue<HuffmanTreeNode*,
                    std::vector<HuffmanTreeNode*>,
                    Compare> pq;
-#if 0
+//#if 0
 	//create a pseudo EOF so that we could mark end of decoding
 	HuffmanTreeNode* newNode
             = new HuffmanTreeNode(HUFFMAN_PSEOF, HUFFMAN_PSEOF,1); //character with ASCII value 254, part of extended ASCII table.
         pq.push(newNode);
-#endif
+//#endif
 	for(int i = 0; i < hash_table->count; i++)
 	{
 		HuffmanTreeNode* newNode
@@ -632,7 +632,7 @@ const unsigned char* bufin, uint32_t bufinlen)
 	const char* p_symbol = NULL;
 	//read byte by byte, get ascii value, get equivalent binary, convert, store
 	std::map<uint16_t, std::string>::iterator itr;
-	//uint16_t marker = HUFFMAN_PSEOF;
+	uint16_t marker = HUFFMAN_PSEOF;
 	for(int i = 0; i < bufinlen;i++)
 	{
         itr = huff_code_map.find((uint16_t)bufin[i]);
@@ -643,7 +643,7 @@ const unsigned char* bufin, uint32_t bufinlen)
 		}
 	}
 
-#if 0
+//#if 0
 	//append marker so that it could be used while decoding
 	itr = huff_code_map.find(marker);
 	p_symbol = itr->second.c_str();
@@ -651,7 +651,7 @@ const unsigned char* bufin, uint32_t bufinlen)
 	{
 		str.push_back(*(p_symbol+i));
 	}
-#endif
+//#endif
 	//std::cout << str << std::endl;
 	return;
 }
@@ -930,7 +930,10 @@ HUFFMAN_RESULT huffman_decode_input(HuffmanTreeNode* root,
 			//std::cout << "Reached a leaf" <<std::endl;
 			//std::cout << "cur_node->ascii_id" << std::endl;
 			//std::cout <<"Getting back to root " << root << std::endl;
-			decoded_data.push_back(char(cur_node->ascii_id));
+			if(HUFFMAN_PSEOF != cur_node->ascii_id) // reached EOF
+			{
+			    decoded_data.push_back(char(cur_node->ascii_id));
+			}
 			//std::cout << cur_node->ascii_id;
 			cur_node = tree_root;
 		}
