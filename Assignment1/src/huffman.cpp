@@ -271,111 +271,6 @@ HUFFMAN_RESULT huffman_create_sorting_data(Huffman_Hash_Table* table, Huffman_so
 	}
 	return retval;
 }
-
-#if 0
-HUFFMAN_RESULT huffman_hash_table_sort(Huffman_Hash_Table* table, Huffman_Pqueue_node** Pqueue)
-{
-	uint16_t entries[HashCapacity] = {0};
-	HUFFMAN_RESULT retval = HUFFMAN_SUCCESS; 
-	if (NULL == table) 
-	{
-		std::cout << "Memory access error";
-		retval = HUFFMAN_FAILURE;
-	}
-	//fill array for radix sort
-	for(int i = 0; i< HashCapacity; i++)
-	{
-		//if(NULL != table->items[i] && i == table->items[i]->idx)
-		if(NULL != table->items[i])
-		{
-			entries[i] = table->items[i]->count;
-		}
-		else
-		{
-			entries[i] = 0;
-		}
-		//std::cout << "entries " << i << "=" << entries[i] << std::endl;
-	}
-    //retval = huffman_radix_sort(entries, table->count);
-	retval = huffman_radix_sort(entries, table->size_table);
-	for(int i = 0; i< HashCapacity; i++)
-	//for(int i = 0; i< table->count; i++)
-	{
-		//std::cout << "Sorted entries " << i << "=" << entries[i] << std::endl;
-	}
-
-	// copy the priority queue
-	return retval;
-}
-
-HUFFMAN_RESULT huffman_radix_sort(uint16_t* a, uint16_t n)
-{
-	HUFFMAN_RESULT retval = HUFFMAN_SUCCESS;
-	
-	int16_t max_count = get_max_item_count(a, n);
-	std::cout << "Max Elemental Item Count = " << max_count << std::endl;
-
-	for(uint16_t pos = 1; max_count/pos > 0; pos *= 10)
-	{
-		retval = huffman_count_sort(a, n, pos);
-	}
-
-	return retval;
-}
-
-HUFFMAN_RESULT huffman_count_sort(uint16_t*a, uint16_t n, uint16_t pos)
-{
-	HUFFMAN_RESULT retval = HUFFMAN_SUCCESS;
-
-	uint16_t count[10] = {0}; 
-	uint16_t* b = NULL; // temporary array
-
-	b = (uint16_t*) malloc(n*sizeof(uint16_t));
-	for(int i = 0; i < n; i++)
-	{
-		b[i] = 0;
-	}
-	//Find count of digits and increment respective index content by 1;
-	for(int i = 0; i< n; i++)
-	{
-		++count[(a[i]/pos) % 10]; // find the positional digit at content of a[i]
-	}
-	
-	//Find Prefix sum
-	for (int i = 1; i < 10; i++)
-	{
-		count[i] = count[i] + count[i-1];
-	}
-
-	//Map the item in 'a' starting from right to maintain stability. 
-	for(int i = n-1; i >=0; i--)
-	{
-		b[--count[(a[i]/pos)%10]] = a[i];
-	}
-
-	for(int i = 0; i< n; i++)
-	{
-		a[i] = b[i];
-	}
-	free(b);
-	return retval;
-}
-
-uint16_t get_max_item_count(uint16_t*a, uint16_t n)
-{
-	uint16_t max_item = a[0];
-	if (NULL != a)
-	{
-        for (int i = 1; i < n; i++)
-            if (a[i] > max_item)
-		    {
-                max_item = a[i];
-		    }
-	}
-	return max_item;
-}
-#endif
-
 HUFFMAN_RESULT huffman_hash_table_sort(Huffman_sort_node* table, uint16_t table_size)
 {
 	HUFFMAN_RESULT retval = HUFFMAN_SUCCESS; 
@@ -523,19 +418,7 @@ int huffman_encode(const unsigned char *bufin,
 	// free input sort node; no need of it after getting the Priority Queue.
 	free_input_sort_node(input_sort_data, hash_table->count);
 
-#if 0
-	while (!pq.empty())
-	{
-        HuffmanTreeNode* p = pq.top();
-        pq.pop();
-        std::cout << p->array_id << "-- " << p->ascii_id << " -- " << p->item_freq << std::endl;
-    }
-#endif
-
 	//Create Huffman code tree
-	// Sorting Method, not currently working
-	//huffman_build_tree(&root, input_sort_data, hash_table->count, &height);
-
 	//using priority queue method
 	huffman_build_tree_pq(&root, pq);
 	std::cout << "huffman_tree root 1 " << root <<"\n"; 
@@ -773,113 +656,6 @@ const unsigned char* bufin, uint32_t bufinlen)
 	return;
 }
 
-
-HUFFMAN_RESULT huffman_build_tree(Huffman_sort_node** root, Huffman_sort_node* data, uint16_t n_elem, uint16_t* height)
-{
-	HUFFMAN_RESULT retval = HUFFMAN_SUCCESS;
-	uint16_t idx_input_arr                = 0;//tracks copiesd array index
-	uint16_t idx_element_arr              = 0; //tracks main array elements
-	uint16_t idx_parent_cur_adr_fetch_idx = 0;
-	uint16_t idx_parent_cur_insert_idx    = 0;
-	Huffman_sort_node* tmp_node           = NULL;
-	
-	Huffman_sort_node** parent_arr = (Huffman_sort_node**)malloc(sizeof(Huffman_sort_node*)*n_elem);
-	memset(parent_arr, 0, sizeof(Huffman_sort_node*)*n_elem);
-
-	Huffman_sort_node* input_data_copy = (Huffman_sort_node*) malloc(n_elem*sizeof(Huffman_sort_node));
-	if (NULL != input_data_copy)
-	{
-		for(int i = 0; i < n_elem; i++)
-		{
-			input_data_copy->array_id   = data->array_id;
-			input_data_copy->ascii_id   = data->ascii_id;
-			input_data_copy->item_count = data->item_count;
-			input_data_copy->left		= NULL;
-			input_data_copy->right		= NULL;
-		}
-	}
-
-	while (1 < n_elem)
-	{
-		/** Take Two nodes */
-		Huffman_sort_node* tmp_ptr2 = NULL;//to track inserted intermediate nodes stored at temp_arr
-	    Huffman_sort_node* tmp_ptr1 = NULL;//to track input sorted array
-		tmp_ptr1 = &input_data_copy[idx_input_arr];
-		tmp_ptr2 = &input_data_copy[idx_input_arr+1];
-
-		// three cases, either both input nodes, one intermediate node, or both intermediate node
-		if(tmp_ptr1->ascii_id !=HUFFMAN_INTERNAL_NODE_ID)
-		{
-			tmp_ptr1 = &data[idx_element_arr];
-			idx_element_arr++;
-			std::cout << "old Left is = "<< tmp_ptr1 << "Item = " << tmp_ptr1->item_count <<std:: endl;
-		}
-		else
-		{
-			tmp_ptr1 = parent_arr[idx_parent_cur_adr_fetch_idx];
-			idx_parent_cur_adr_fetch_idx++;
-		}
-		if(tmp_ptr2->ascii_id !=HUFFMAN_INTERNAL_NODE_ID)
-		{
-			tmp_ptr2 = &data[idx_element_arr];
-			idx_element_arr++;
-		}
-		else
-		{
-			tmp_ptr1 = parent_arr[idx_parent_cur_adr_fetch_idx];;
-			idx_parent_cur_adr_fetch_idx++;
-		}
-		create_tree_node(&tmp_node, HUFFMAN_INTERNAL_NODE_ID, tmp_ptr1, tmp_ptr2);
-		parent_arr[idx_parent_cur_insert_idx] = tmp_ptr2;
-		idx_parent_cur_insert_idx++;
-		idx_input_arr++;
-		n_elem -=1;
-		input_data_copy[idx_input_arr].ascii_id =  tmp_node->ascii_id;
-		input_data_copy[idx_input_arr].item_count = tmp_node->item_count;
-		input_data_copy[idx_input_arr].left = tmp_node->left;
-		input_data_copy[idx_input_arr].right = tmp_node->right;
-		std::cout << "new Left is = "<< input_data_copy[idx_input_arr].left << "Item = "<<input_data_copy[idx_input_arr].left->item_count<<std:: endl;
-		/** call sorting again */
-		if(n_elem > 1)
-		{
-			huffman_hash_table_sort(&input_data_copy[idx_input_arr], n_elem);
-		}
-		else
-		{
-			std::cout << "idx_input_arr = " << idx_input_arr << std::endl;
-		}
-	}
-	*root = tmp_node;
-	*height = 5;
-	int bin_sym[100] = {0}; 
-	int cur_pos = 0;
-	print_huffman_codes(*root, bin_sym, cur_pos);
-	return retval;
-}
-
-HUFFMAN_RESULT create_tree_node(Huffman_sort_node** node, uint16_t ascii_id, 
-Huffman_sort_node* left, Huffman_sort_node* right)
-{
-	HUFFMAN_RESULT retval = HUFFMAN_SUCCESS;
-	Huffman_sort_node* tmp_ptr = (Huffman_sort_node*) malloc(sizeof(Huffman_sort_node));
-	if (NULL != tmp_ptr)
-	{
-		tmp_ptr->ascii_id = ascii_id;
-		if (NULL != left && NULL != right)
-		{
-			tmp_ptr->left = left;
-			tmp_ptr->right = right;
-			tmp_ptr->item_count = left->item_count+right->item_count;
-		}
-		else
-		{
-			tmp_ptr->item_count = 1;
-		}
-		//tmp_ptr->bin_symbol = NULL;
-	}
-	*node = tmp_ptr;
-	return retval;
-}
 bool is_leaf(Huffman_sort_node* node)
 {
 	if (NULL!= node)
@@ -1176,4 +952,3 @@ HUFFMAN_RESULT huffman_decode_input(HuffmanTreeNode* root,
 
 	return retval;
 }
-

@@ -119,38 +119,28 @@ public:
 
 HUFFMAN_RESULT create_huff_node(uint16_t key, char* value, huff_node** node);
 HUFFMAN_RESULT create_huffman_hashtable(uint64_t size, Huffman_Hash_Table** table);
-void free_huffman_node(huff_node* item);
-void free_huffman_hash_table(Huffman_Hash_Table* table);
+void           free_huffman_node(huff_node* item);
+void           free_huffman_hash_table(Huffman_Hash_Table* table);
 HUFFMAN_RESULT huff_node_insert(Huffman_Hash_Table* table, uint16_t* key, char* value);
 HUFFMAN_RESULT huffman_node_increment_count(Huffman_Hash_Table* table, uint16_t key);
 HUFFMAN_RESULT huffman_node_search(Huffman_Hash_Table* table, char* value, uint16_t* key);
-void print_huffman_item(Huffman_Hash_Table* table, char* val);
-void print_huffman_table(Huffman_Hash_Table* table);
+void           print_huffman_item(Huffman_Hash_Table* table, char* val);
+void           print_huffman_table(Huffman_Hash_Table* table);
 HUFFMAN_RESULT huffman_create_sorting_data(Huffman_Hash_Table* table, Huffman_sort_node** sorting_data);
-#if 0
-HUFFMAN_RESULT huffman_hash_table_sort(Huffman_Hash_Table* table, Huffman_Pqueue_node** Pqueue);
-HUFFMAN_RESULT huffman_radix_sort(uint16_t* a, uint16_t n);
-HUFFMAN_RESULT huffman_count_sort(uint16_t*a, uint16_t n, uint16_t pos);
-uint16_t get_max_item_count(uint16_t*a, uint16_t n);
-#endif
 HUFFMAN_RESULT huffman_hash_table_sort(Huffman_sort_node* table, uint16_t table_size);
 HUFFMAN_RESULT huffman_radix_sort(Huffman_sort_node* a, uint16_t n);
 HUFFMAN_RESULT huffman_count_sort(Huffman_sort_node*a, uint16_t n, uint16_t pos);
-uint16_t get_max_item_count(Huffman_sort_node*a, uint16_t n);
-HUFFMAN_RESULT huffman_build_tree(Huffman_sort_node** root, Huffman_sort_node* data, uint16_t n_elem, uint16_t* height);
-HUFFMAN_RESULT create_tree_node(Huffman_sort_node** node, uint16_t ascii_id, 
-Huffman_sort_node* left, Huffman_sort_node* right);
-void print_huffman_codes(Huffman_sort_node* root, int code[], int cur_pos);
-void free_input_sort_node(Huffman_sort_node*input_sort_data, uint16_t length);
+uint16_t       get_max_item_count(Huffman_sort_node*a, uint16_t n);
+void           print_huffman_codes(Huffman_sort_node* root, int code[], int cur_pos);
+void           free_input_sort_node(Huffman_sort_node*input_sort_data, uint16_t length);
 HUFFMAN_RESULT huffman_build_tree_pq(HuffmanTreeNode** root, 
     std::priority_queue<HuffmanTreeNode*,
     std::vector<HuffmanTreeNode*>,
     Compare> pq);
-//void print_huffman_codes_pq(HuffmanTreeNode* root, int code[], int cur_pos);
-void print_huffman_codes_pq(HuffmanTreeNode* root, char code[], int cur_pos);
-void store_huffman_code_map(HuffmanTreeNode* root, std::map<uint16_t, std::string>&huff_code_map, std::string str);
-void print_huffman_code_map(std::map<uint16_t, std::string>huff_code_map);
-void print_huffman_decode_map(std::map< std::string, uint16_t>huff_decode_map);
+void           print_huffman_codes_pq(HuffmanTreeNode* root, char code[], int cur_pos);
+void           store_huffman_code_map(HuffmanTreeNode* root, std::map<uint16_t, std::string>&huff_code_map, std::string str);
+void           print_huffman_code_map(std::map<uint16_t, std::string>huff_code_map);
+void           print_huffman_decode_map(std::map< std::string, uint16_t>huff_decode_map);
 /**
  * Header start Ascii Val-> 16 (Syn)
  *
@@ -160,9 +150,9 @@ void print_huffman_decode_map(std::map< std::string, uint16_t>huff_decode_map);
  * Eg:Header+Payload
  * syn(Ascii,Frequency,Binary), ()...Nak
 */
-void create_huffman_code_header(std::map<uint16_t, std::string>huff_code_map, std::string &str);
+void           create_huffman_code_header(std::map<uint16_t, std::string>huff_code_map, std::string &str);
 
-void encode_data(std::map<uint16_t,std::string>huff_code_map, std::string &str,
+void           encode_data(std::map<uint16_t,std::string>huff_code_map, std::string &str,
 const unsigned char* bufin, uint32_t bufinlen);
 /**
  * @param bufin       Array of characters to encode
