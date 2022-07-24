@@ -76,7 +76,6 @@ int main(int argc, const char * argv[])
 	if(code){ free(code); }
 	if(decode){ free(decode); }
 
-#if 0
 	// Check output
 	string diff_command = "diff " + string(in_filename) + " " + string(out_filename);
 	int diff_ret = system(diff_command.c_str());
@@ -91,35 +90,6 @@ int main(int argc, const char * argv[])
 		cout << "FAILURE" << endl;
 		return EXIT_FAILURE;
 	}
-#endif
-#if 0
-	Huffman_Hash_Table* hash_table = NULL;
-	create_huffman_hashtable(HashCapacity, &hash_table);
-	std::cout << "Main Table Address = " << hash_table << " Table Item Address = " << hash_table->items << std::endl;
-	char val = 'c';
-	uint16_t key = hash_function(&val);
-	huff_node_insert(hash_table, &key, &val);
-	huff_node_insert(hash_table, &key, &val);
-	huff_node_insert(hash_table, &key, &val);
-	huff_node_insert(hash_table, &key, &val);
-	val = ' ';
-	key = hash_function(&val);
-	huff_node_insert(hash_table, &key, &val);
-	huff_node_insert(hash_table, &key, &val);
-	val = '?';
-	key = hash_function(&val);
-	huff_node_insert(hash_table, &key, &val);
-	val = 'a';
-	key = hash_function(&val);
-	huff_node_insert(hash_table, &key, &val);
-	val = 'A';
-	key = hash_function(&val);
-	huff_node_insert(hash_table, &key, &val);
-	val = '.';
-	key = hash_function(&val);
-	huff_node_insert(hash_table, &key, &val);
-	print_huffman_table(hash_table);
-	free_huffman_hash_table(hash_table);
-#endif
+
     return 0;
 }

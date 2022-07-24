@@ -1100,6 +1100,8 @@ HUFFMAN_RESULT huffman_decode_input(HuffmanTreeNode* root,
 	unsigned char cur_bit = '\0';
 	uint16_t cur_pos = 0;
 	std::cout << bufinlen << std::endl;
+	std:: string decoded_data = "";
+
 	//Iterate over input to cross header
 	for(int i = 0; i < bufinlen; i++)
 	{
@@ -1152,7 +1154,8 @@ HUFFMAN_RESULT huffman_decode_input(HuffmanTreeNode* root,
 			//std::cout << "Reached a leaf" <<std::endl;
 			//std::cout << "cur_node->ascii_id" << std::endl;
 			//std::cout <<"Getting back to root " << root << std::endl;
-			std::cout << cur_node->ascii_id;
+			decoded_data.push_back(char(cur_node->ascii_id));
+			//std::cout << cur_node->ascii_id;
 			cur_node = tree_root;
 		}
 		else
@@ -1160,7 +1163,17 @@ HUFFMAN_RESULT huffman_decode_input(HuffmanTreeNode* root,
 			//std::cout << cur_node << " child " << cur_node->left  << "--" <<  cur_node->right<< std::endl;
 		}
 	}
-	//*bufout = (unsigned char**) malloc(sizeof(unsigned char*)* )
+	std::cout << decoded_data << std::endl;
+	unsigned char* pBuf = NULL;
+	pBuf = (unsigned char*) malloc(sizeof(unsigned char)*decoded_data.length());
+	for(int i = 0; i < decoded_data.length(); i++)
+	{
+		pBuf[i] = decoded_data[i];
+	}
+	*bufout = pBuf;
+	
+	*pbufoutlen = decoded_data.length();
+
 	return retval;
 }
 
