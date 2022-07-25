@@ -13,7 +13,7 @@ const uint64_t HashCapacity = 256;
 #define HUFFMAN_FAILURE -1
 #define HUFFMAN_EFAIL_MEMORY -2
 #define HUFFMAN_INTERNAL_NODE_ID	300
-#define HUFFMAN_PSEOF				254
+#define HUFFMAN_PSEOF				255
 #define HUFFMAN_MAX_STRLEN			27
 #define HEADER_START				'{'
 #define HEADER_END					'}'
@@ -154,6 +154,8 @@ void           create_huffman_code_header(std::map<uint16_t, std::string>huff_co
 
 void           encode_data(std::map<uint16_t,std::string>huff_code_map, std::string &str,
 const unsigned char* bufin, uint32_t bufinlen);
+
+void encode_data_byte_form(std::string header, std::vector<unsigned char>& vector_enc_data);
 /**
  * @param bufin       Array of characters to encode
  * @param bufinlen    Number of characters in the array

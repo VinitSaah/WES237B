@@ -2,6 +2,40 @@
 #include <stdlib.h>
 #include <iostream>
 
+uint32_t set_bit(uint8_t in_data, uint8_t bit_pos);
+bool is_bit_set(uint8_t in_data, uint8_t bit_pos);
+
+uint32_t set_bit(uint8_t in_data, uint8_t bit_pos)
+{
+	in_data |= (1 << bit_pos);
+	return in_data;
+}
+
+bool is_bit_set(uint8_t in_data, uint8_t bit_pos)
+{
+	bool retval = false;
+	in_data &= (1 << bit_pos);
+	if(in_data)
+	{
+		retval = true;
+	}
+	return retval;
+}
+
+void convert_byte_to_bin(uint8_t data, std::string& str)
+{
+	for(uint8_t i = 0; i < 7; i++)
+	{
+	    if(is_bit_set(data, i))
+		{
+			str.push_back('1');
+		}
+		else
+		{
+			str.push_back('0');
+		}
+	}
+}
 
 uint16_t hash_function(char* str)
 {
@@ -375,7 +409,7 @@ int huffman_encode(const unsigned char *bufin,
 	Huffman_sort_node* input_sort_data = NULL;
 	//Huffman_sort_node* root            = NULL;
 	HuffmanTreeNode* root              = NULL;
-	char* p_encoded_data                 = NULL;
+	unsigned char* p_encoded_data                 = NULL;
 	//Huffman_sort_node* tmp_root        = NULL;
 	//uint16_t           height          = 0;
 	//int			   bin_sym[10];
@@ -439,31 +473,39 @@ int huffman_encode(const unsigned char *bufin,
 	
 	std::string header;
 	create_huffman_code_header(code_map,header);
-	//std::cout << header << std::endl;
+	std::cout << "Header Size = " << header.length() << std::endl;
 
 	//Create Encoded data
 	encode_data(code_map, header, bufin,bufinlen);
 	std::cout << "Header\n";
 	std::cout << header << std::endl;
 
-	uint16_t coded_size = header.length();
-	std::cout<< "coded size\n"<<coded_size << std::endl;
-    uint16_t string_size = sizeof(char)*(coded_size);
-	std::cout << "string_size\n" << string_size << std::endl;
-	p_encoded_data = (char*)malloc(sizeof(char)*(coded_size));
-	const char* coded_data = header.c_str();
+	//now we have header and bit streams in string 
+	//store byte information on vector
+
+	std::vector<unsigned char> vector_enc_data;
+	encode_data_byte_form(header, vector_enc_data);
+	std::cout << "****Vector compress data creation****\n";
+	for(int i = 0; i <vector_enc_data.size(); i ++)
+	{
+		std::cout << vector_enc_data[i];
+	}
+	std::cout << std::endl;
+	std::cout << "Compressed size = " << vector_enc_data.size() << std::endl;
+	uint16_t coded_size = vector_enc_data.size();
+	p_encoded_data = (unsigned char*)malloc(sizeof(unsigned char)*(coded_size));
 
 	//std::cout << std::endl;
 	for(int i = 0; i < coded_size ; i++)
 	{
-		p_encoded_data[i] = coded_data[i];
+		p_encoded_data[i] = vector_enc_data[i];
 		std::cout<< p_encoded_data[i];
 	}
 	std::cout << "\n";
 	std::cout << "Footer\n";
 	
 
-	*pbufout = (unsigned char*)p_encoded_data;
+	*pbufout = p_encoded_data;
 	*pbufoutlen = coded_size;
 
 	free_huffman_hash_table(hash_table);
@@ -549,7 +591,7 @@ void print_huffman_codes_pq(HuffmanTreeNode* root,char arr[], int top)
     // for this character from arr
     if (NULL == node->left && NULL == node->right) 
 	{
-        std::cout << node->array_id << "--" <<node->ascii_id << "-> " << char(node->ascii_id) << "-- ";
+        std::cout << node->array_id << "--" <<node->ascii_id << "-> " << (unsigned char)(node->ascii_id) << "-- ";
         for (int i = 0; i < top; i++) 
 		{
             std::cout << arr[i];
@@ -596,11 +638,11 @@ void print_huffman_decode_map(std::map<std::string, uint16_t>huff_decode_map)
 void create_huffman_code_header(std::map<uint16_t, std::string>huff_code_map, std::string &str)
 {
 	/** Header format
-	 * Header start Ascii Val-> 16 (Syn)
+	 * Header start Ascii Val-> {
 	 *
 	 * 
 	 * Symbol format (Ascii, *Frequency*, Binary) // frequency is optional
-	 * Header End Ascii val->   15(Nak)
+	 * Header End Ascii val->   }
 	 * Header+Payload
 	 * syn(Ascii,Frequency,Binary), ()...Nak
 	 */
@@ -654,6 +696,47 @@ const unsigned char* bufin, uint32_t bufinlen)
 //#endif
 	//std::cout << str << std::endl;
 	return;
+}
+
+void encode_data_byte_form(std::string header, std::vector<unsigned char>& vector_enc_data)
+{
+	uint32_t idx_cur = 0;
+	//store header char by char
+	for(uint32_t i = 0; i < header.length(); i++)
+	{
+		vector_enc_data.push_back(header[i]);
+		if(header[i] == '}')
+		{
+			//filled header break
+			idx_cur = i;
+			break;
+		}
+	}
+	idx_cur++; //go to bitstreams
+	uint8_t temp_data = 0;
+	//Now read char by char and create a byte and add to vector_enc_data
+	uint64_t read_rem = header.length()-idx_cur; //length-header
+	while(read_rem)
+	{
+		temp_data = 0;
+		int loop_count = 8; //for a byte of data
+		if(read_rem % 8)
+		{
+			loop_count = (read_rem%8);
+			std::cout << "Read remaining loop count updated to " << loop_count << std::endl;
+		}
+	    for(int j = 0; j < loop_count; j++)
+		{
+			if(header[idx_cur+j] == '1')
+			{
+				temp_data = set_bit(temp_data, j);
+			}
+		}
+		idx_cur += loop_count;
+		read_rem -= loop_count;  
+		//store byte to vector
+		vector_enc_data.push_back(temp_data);
+	}
 }
 
 bool is_leaf(Huffman_sort_node* node)
