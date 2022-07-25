@@ -24,7 +24,7 @@ bool is_bit_set(uint8_t in_data, uint8_t bit_pos)
 
 void convert_byte_to_bin(uint8_t data, std::string& str)
 {
-	for(uint8_t i = 0; i < 7; i++)
+	for(int i = 7; i >= 0; i--)
 	{
 	    if(is_bit_set(data, i))
 		{
@@ -729,7 +729,7 @@ void encode_data_byte_form(std::string header, std::vector<unsigned char>& vecto
 		{
 			if(header[idx_cur+j] == '1')
 			{
-				temp_data = set_bit(temp_data, j);
+				temp_data = set_bit(temp_data, (loop_count - j -1));
 			}
 		}
 		idx_cur += loop_count;
@@ -972,23 +972,31 @@ HUFFMAN_RESULT huffman_decode_input(HuffmanTreeNode* root,
 		}
 
 	}
+	std:: cout << bufin[cur_pos];
 	cur_pos++; //start of symbols;
+	std::cout << bufin[cur_pos] << std::endl;
+
+	//Convert Byte data to intermediate string;
+	std::string bitstream_str = "";
+
 	std::cout << "Bit stream to be decoded \n";
-	for(int i = cur_pos; i < bufinlen ; i++)
+	uint64_t encoded_length = bufinlen-cur_pos;
+	huffman_decode_convert_byte_bitstream(&bufin[cur_pos], encoded_length, bitstream_str);
+	for(int i = 0; i < bitstream_str.length() ; i++)
 	{
-		std :: cout << bufin[i];
-	} 
-	//std::cout << bufin[cur_pos] << std::endl;
+		std :: cout << bitstream_str[i];
+	}
 	std::cout << std::endl;
 
 	tree_root = root;
 	std::cout << "****Decoding start*****\n";
 	std::cout << "Root address = " << root << std::endl;
 	cur_node = tree_root;
-	for(uint16_t idx = cur_pos;idx < bufinlen; idx++)
+	cur_pos = 0;
+	for(uint16_t idx = cur_pos;idx < bitstream_str.length(); idx++)
 	{	
 		std::string str = "";
-		cur_bit = bufin[idx];	
+		cur_bit = bitstream_str[idx];	
 		//std :: cout << "Current bit = " << cur_bit << std::endl;
 		if (cur_bit == '0')
 		{
@@ -1036,5 +1044,19 @@ HUFFMAN_RESULT huffman_decode_input(HuffmanTreeNode* root,
 	
 	*pbufoutlen = decoded_data.length();
 
+	return retval;
+}
+
+HUFFMAN_RESULT huffman_decode_convert_byte_bitstream(const unsigned char* pinput_str, uint64_t in_length, std::string& bitstream)
+{
+    HUFFMAN_RESULT retval = HUFFMAN_SUCCESS;
+	uint8_t temp_data = 0;
+
+	for(int i = 0; i <in_length; i++)
+	{
+		//fetch one char
+		temp_data = pinput_str[i];
+		convert_byte_to_bin(temp_data, bitstream);
+	}
 	return retval;
 }

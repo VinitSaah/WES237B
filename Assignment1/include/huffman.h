@@ -200,4 +200,6 @@ HUFFMAN_RESULT huffman_decode_input(HuffmanTreeNode* root,
     unsigned char **bufout,
     uint32_t *pbufoutlen);
 
+HUFFMAN_RESULT huffman_decode_convert_byte_bitstream(const unsigned char* pinput_str, uint64_t length, std::string& bitstream);
+
 #endif
