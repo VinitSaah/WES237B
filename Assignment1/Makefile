@@ -7,8 +7,8 @@ INCLUDEDIR=include
 SRCDIR=src
 OBJDIR=objs
 
-OPENCV_INCLUDE_PATH = `pkg-config --cflags opencv4`
-OPENCV_LIBS = `pkg-config --libs opencv4`
+#OPENCV_INCLUDE_PATH = `pkg-config --cflags opencv4`
+#OPENCV_LIBS = `pkg-config --libs opencv4`
 
 LIBS=-lc $(OPENCV_LIBS)
 
