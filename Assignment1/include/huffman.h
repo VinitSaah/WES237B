@@ -13,7 +13,7 @@ const uint64_t HashCapacity = 256;
 #define HUFFMAN_FAILURE -1
 #define HUFFMAN_EFAIL_MEMORY -2
 #define HUFFMAN_INTERNAL_NODE_ID	300
-#define HUFFMAN_PSEOF				255
+#define HUFFMAN_PSEOF				126
 #define HUFFMAN_MAX_STRLEN			27
 #define HEADER_START				'{'
 #define HEADER_END					'}'
@@ -200,6 +200,6 @@ HUFFMAN_RESULT huffman_decode_input(HuffmanTreeNode* root,
     unsigned char **bufout,
     uint32_t *pbufoutlen);
 
-HUFFMAN_RESULT huffman_decode_convert_byte_bitstream(const unsigned char* pinput_str, uint64_t length, std::string& bitstream);
+HUFFMAN_RESULT huffman_decode_convert_byte_bitstream(const unsigned char* pinput_str, uint64_t length, uint64_t start_length,std::string& bitstream);
 
 #endif
