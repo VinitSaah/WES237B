@@ -17,6 +17,8 @@ const uint64_t HashCapacity = 256;
 #define HUFFMAN_MAX_STRLEN			27
 #define HEADER_START				'{'
 #define HEADER_END					'}'
+#define INVALID_DATA                255
+#define HEADER_INVALID_BYTE          1
 
 typedef int8_t HUFFMAN_RESULT;
 /**
@@ -155,7 +157,7 @@ void           create_huffman_code_header(std::map<uint16_t, std::string>huff_co
 void           encode_data(std::map<uint16_t,std::string>huff_code_map, std::string &str,
 const unsigned char* bufin, uint32_t bufinlen);
 
-void encode_data_byte_form(std::string header, std::vector<unsigned char>& vector_enc_data);
+void encode_data_byte_form(std::string& header, std::vector<unsigned char>& vector_enc_data);
 /**
  * @param bufin       Array of characters to encode
  * @param bufinlen    Number of characters in the array
@@ -200,6 +202,8 @@ HUFFMAN_RESULT huffman_decode_input(HuffmanTreeNode* root,
     unsigned char **bufout,
     uint32_t *pbufoutlen);
 
-HUFFMAN_RESULT huffman_decode_convert_byte_bitstream(const unsigned char* pinput_str, uint64_t length, uint64_t start_length,std::string& bitstream);
+HUFFMAN_RESULT huffman_decode_convert_byte_bitstream(const unsigned char* pinput_str, uint64_t length, 
+uint64_t start_length,std::string& bitstream, 
+uint8_t invalid_num);
 
 #endif

@@ -477,7 +477,13 @@ int huffman_encode(const unsigned char *bufin,
 	std::string header;
 	create_huffman_code_header(code_map,header);
 	std::cout << "Header Size = " << header.length() << std::endl;
-
+	#if 0
+	for(int i = 0; i < header.length(); i++)
+	{
+	    std::cout << header[i];
+	}
+	#endif
+	std::cout << std::endl;
 	//Create Encoded data
 	encode_data(code_map, header, bufin,bufinlen);
 
@@ -503,10 +509,21 @@ int huffman_encode(const unsigned char *bufin,
 	{
 		p_encoded_data[i] = vector_enc_data[i];
 		//std::cout<< p_encoded_data[i];
+		#if 0
+		if(i == 1)
+		{
+			std::cout <<(int)p_encoded_data[i];
+		}
+		else
+		{
+			std::cout <<p_encoded_data[i];
+		}
+		#endif
 	}
 	//p_encoded_data[coded_size] = '\n';
 	std::cout << "\n";
 	std::cout << "Footer\n";
+	
 	
 
 	*pbufout = p_encoded_data;
@@ -653,6 +670,7 @@ void create_huffman_code_header(std::map<uint16_t, std::string>huff_code_map, st
 	char h_st = HEADER_START;
 	char h_end = HEADER_END;
 	str.push_back(h_st);
+	str.push_back('0'); // to be filled later for invalid bits
 	//std::cout << str;
 	std::map<uint16_t, std::string>::iterator itr;
 	const char* p_symbol = NULL;
@@ -702,7 +720,7 @@ const unsigned char* bufin, uint32_t bufinlen)
 	return;
 }
 
-void encode_data_byte_form(std::string header, std::vector<unsigned char>& vector_enc_data)
+void encode_data_byte_form(std::string& header, std::vector<unsigned char>& vector_enc_data)
 {
 	uint32_t idx_cur = 0;
 	//store header char by char
@@ -723,15 +741,34 @@ void encode_data_byte_form(std::string header, std::vector<unsigned char>& vecto
 	uint64_t read_rem = header.length()-idx_cur; //length-header
 	std::cout << "Read Counter to start with" << read_rem << std::endl;
 	int loop_count = 8;//byte of data
+
+	invalid_bits = (uint8_t)8-(uint8_t)(read_rem%8);
+	std::string inv;
+	inv.push_back((char)invalid_bits);
+	std::cout << "number of invalid = " << int(invalid_bits) << std::endl;
+	//update header
+	header.replace(HEADER_INVALID_BYTE, HEADER_INVALID_BYTE, inv);
+	vector_enc_data[HEADER_INVALID_BYTE]=header[HEADER_INVALID_BYTE];
+	std::cout << "invalid string header " <<(int)header[HEADER_INVALID_BYTE] <<std::endl;
+#if 0
+	for(int i = 0; i < header.length(); i++)
+	{
+		if(i == 1)
+		{
+	        std::cout << (int)header[i];
+		}
+		else
+		{
+			std::cout << header[i];
+		}
+	}
+#endif
 	while(read_rem)
 	{
 		temp_data = 0;
 		if(read_rem < 8)
 		{
 			loop_count = read_rem;
-			invalid_bits = (uint8_t)8-(uint8_t)loop_count;
-			std::cout << "number of invalid = " << int(invalid_bits) << std::endl;
-
 			std::cout << "Read remaining loop count updated to " << loop_count << std::endl;
 		}
 	    for(int j = 0; j < loop_count; j++)
@@ -748,7 +785,7 @@ void encode_data_byte_form(std::string header, std::vector<unsigned char>& vecto
 		vector_enc_data.push_back(temp_data);
 		//std::cout << (int)temp_data << std::endl;
 		//handle number of invalid bits
-		vector_enc_data.push_back(invalid_bits);
+		//vector_enc_data.push_back(invalid_bits);
 		//std::cout << (int)invalid_bits << std::endl;
 	}
 }
@@ -969,10 +1006,15 @@ HUFFMAN_RESULT huffman_decode_input(HuffmanTreeNode* root,
 	std::cout << bufinlen << std::endl;
 	//std:: string decoded_data = "";
 	std::vector<unsigned char> decoded_data;
+	uint8_t invalid_num = 0;
 
 	//Iterate over input to cross header
 	for(int i = 0; i < bufinlen; i++)
 	{
+		if(i == HEADER_INVALID_BYTE)
+		{
+			invalid_num = bufin[i];
+		}
 		if(bufin[i] == '}')
 		{
 			std:: cout << "Header Parsed " << bufin[i]<< std::endl;
@@ -988,8 +1030,8 @@ HUFFMAN_RESULT huffman_decode_input(HuffmanTreeNode* root,
 
 	std::cout << "Bit stream to be decoded \n";
 	uint64_t encoded_length = bufinlen-cur_pos;
-	std::cout << "Encoding Length = " << encoded_length << std::endl;
-	huffman_decode_convert_byte_bitstream(bufin, bufinlen, cur_pos,bitstream_str);
+	std::cout << "Encoding Length = " << encoded_length  << "invalid num= "<<  invalid_num << std::endl;
+	huffman_decode_convert_byte_bitstream(bufin, bufinlen, cur_pos,bitstream_str, invalid_num);
 
 	tree_root = root;
 	std::cout << "****Decoding start*****\n";
@@ -1051,19 +1093,24 @@ HUFFMAN_RESULT huffman_decode_input(HuffmanTreeNode* root,
 	return retval;
 }
 
-HUFFMAN_RESULT huffman_decode_convert_byte_bitstream(const unsigned char* pinput_str, uint64_t in_length, uint64_t start_length,std::string& bitstream)
+HUFFMAN_RESULT huffman_decode_convert_byte_bitstream(const unsigned char* pinput_str, 
+uint64_t in_length, 
+uint64_t start_length,std::string& bitstream, 
+uint8_t invalid_num)
 {
     HUFFMAN_RESULT retval = HUFFMAN_SUCCESS;
 	uint8_t temp_data = 0;
-	uint8_t invalid_bits = 0;
 	int i;
-
-	for( i = 0; i <(in_length-start_length);i+=2)
+	uint8_t invalid_bits = 0;
+	for( i = 0; i <(in_length-start_length);i++)
 	{
 		//fetch one char this is main data
 		temp_data = pinput_str[(start_length+i)];
 		//fetch another char
-		invalid_bits = pinput_str[(start_length+i+1)];
+		if (i == (in_length-start_length-1))
+		{
+			invalid_bits = invalid_num;
+		}
 		convert_byte_to_bin(temp_data, bitstream, invalid_bits);
 	}
 	std::cout << "Output stream position" << i << std::endl;
