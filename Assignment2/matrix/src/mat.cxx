@@ -81,15 +81,11 @@ void Matrix<T>::transpose(Matrix<T>& mat)const
 {
     if(mat.height && mat.width && mat.height == this->width && mat.width == this->height)
     {
-        typename std::vector<T>::iterator ita_col;
-        typename std::vector<std::vector <T>>::iterator ita_row;
-
-        for(ita_row = mat.Mat.begin(); ita_row != mat.Mat.end(); ita_row++)
+        for (int i=0 ; i<width ; i++)
         {
-            for(ita_col = mat.Mat[ita_row].begin(); ita_col != mat.Mat[ita_row].end(); ita_col++)
+            for (int j=0 ; j<height ; j++)
             {
-
-                mat.Mat[ita_row][ita_col] = this->Mat[ita_col][ita_row];
+                mat.Mat[i][j] = this->Mat[j][i];
             }
         }
 
@@ -100,22 +96,49 @@ void Matrix<T>::transpose(Matrix<T>& mat)const
     }
 }
 
+template<class T>
+void Matrix<T>::add(uint16_t row, uint16_t col, T val)
+{
+    this->Mat[row][col] += val;
+}
+
+template <class T>
+void Matrix<T>:: print_matrix()
+{
+    std::cout <<"------------------------------------" << std::endl;
+    std:: cout << "Matrix " << this << std::endl;
+    for (int i=0 ; i<width ; i++)
+    {
+        for (int j=0 ; j<height ; j++)
+        {
+            std::cout << this->Mat[i][j]<< "    ";
+        }
+        std::cout << std::endl;
+    }
+    std::cout <<"------------------------------------" << std::endl;
+}
+
 template <class T> 
 Matrix<T> operator*(const Matrix<T> &a, const Matrix<T> &b)
 {
-    Matrix<T> c(a.height, b.width);
+    uint16_t height_a = a.get_matrix_height();
+    uint16_t width_a  = a.get_matrix_width();
+    uint16_t height_b = b.get_matrix_height();
+    uint16_t width_b  = b.get_matrix_width();
+
+    Matrix<T> c(height_a, width_b);
     T temp = 0;;
-    if(a.height && a.width && b.height && b.width && a.width == b.height)
+    if(height_a && width_a && height_b && width_b && width_a == height_b)
     {
-        for(int i = 0; i < a.height(); i++)
+        for(int i = 0; i < height_a; i++)
         {  
-            for(int j = 0; j < b.width(); j++)
+            for(int j = 0; j < width_b; j++)
             {
-                for(int k = 0; k< a.width(); k++)
+                for(int k = 0; k< width_a; k++)
                 {
-                    temp += a.Mat[i][k] * b.Mat[k][j];
+                    temp += a.get(i,k)*b.get(k,j);
                 }
-                c.Mat[i][j] = temp; 
+                c.put(i,j,temp);
                 temp = 0;
             }
         }
@@ -134,24 +157,32 @@ template<class T>
 Matrix<T> block_matrix_multiply(const Matrix<T>&a, const Matrix<T>&b, uint16_t block_size)
 {
     uint16_t size_mat    = 0;
-    Matrix<T> c(a.height, b.width);
+    uint16_t height_a = a.get_matrix_height();
+    uint16_t width_a  = a.get_matrix_width();
+    uint16_t height_b = b.get_matrix_height();
+    uint16_t width_b  = b.get_matrix_width();
+    
+    Matrix<T> c(height_a, width_b);
     T temp = 0;
-    if(a.height && a.width && b.height && b.width && a.width == b.height && a.height == b.width && a.height == a.width)
+    if(height_a && width_a && height_b && width_b && width_a == height_b && height_a == width_b && height_a == width_a)
     {
-        size_mat = a.height;
+        size_mat = height_a;
         for(int ii = 0 ; ii < size_mat; ii += block_size)
         {   
             for(int jj = 0; jj < size_mat; jj +=block_size)
             {
                 for(int kk = 0; kk < size_mat; kk += block_size)
                 {
-                    for(int i = ii; i< (ii+block_size > size_mat?size_mat:ii+block_size);i++)
+                    //for(int i = ii; i< (ii+block_size > size_mat?size_mat:ii+block_size);i++)
+                    for(int i = ii; i< (ii+block_size )/*> size_mat?size_mat:ii+block_size)*/;i++)
                     {
-                        for(int j = jj; j< (jj+block_size > size_mat?size_mat:ii+block_size); j++)
+                        //for(int j = jj; j< (jj+block_size > size_mat?size_mat:ii+block_size); j++)
+                        for(int j = jj; j< (jj+block_size)/* > size_mat?size_mat:ii+block_size)*/; j++)
                         {
-                            for(int k = kk; k< (kk+block_size > size_mat?size_mat:ii+block_size); k++)
+                            //for(int k = kk; k< (kk+block_size > size_mat?size_mat:ii+block_size); k++)
+                            for(int k = kk; k< (kk+block_size)/* > size_mat?size_mat:ii+block_size)*/; k++)
                             {
-                                c.Mat[i,j] += a.Mat[i, k]*b.Mat[k,j];
+                                c.add(i,j,a.get(i,k)*b.get(k,j));
                             }
                         }
                     }
@@ -166,3 +197,20 @@ Matrix<T> block_matrix_multiply(const Matrix<T>&a, const Matrix<T>&b, uint16_t b
 
     return c;
 }
+
+template class Matrix<float>;
+template class Matrix<double>;
+template class Matrix<int8_t>;
+template class Matrix<int16_t>;
+template class Matrix<int32_t>;
+template class Matrix<int64_t>;
+template class Matrix<uint8_t>;
+template class Matrix<uint16_t>;
+template class Matrix<uint32_t>;
+template class Matrix<uint64_t>;
+
+template class Matrix<float> operator*<float>(Matrix<float> const&, Matrix<float> const&);
+template class Matrix<float> block_matrix_multiply(const Matrix<float>&, const Matrix<float>&, uint16_t);
+
+
+
