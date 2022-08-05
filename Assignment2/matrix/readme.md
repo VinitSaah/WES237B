@@ -1,1 +1,8 @@
-This project implements template based Matrix. It has two methods. One with Naive approach and other with Block method.
+To run:
+
+sudo make clean
+sudo make
+sudo make install
+./matrix
+
+Note: Sometimes CPU counters overflows and core gets dumped. So run again, till you get proper count

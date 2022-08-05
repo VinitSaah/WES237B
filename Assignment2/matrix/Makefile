@@ -39,6 +39,9 @@ $(BIN): $(OBJS)
 $(BUILD_DIR)%.o: src/%.cxx
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
+install:
+	insmod CPUcntr.ko
+	dmesg|tail -1
 ###
 # Convenience targets
 ###
@@ -47,3 +50,4 @@ $(BUILD_DIR)%.o: src/%.cxx
 clean:
 	rm -rf build/*
 	rm -f $(BIN)
+	rmmod CPUcntr.ko
