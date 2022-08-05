@@ -18,10 +18,10 @@ CXXSRCS := $(wildcard src/*.cxx)
 OBJS := $(CXXSRCS:src/%.cxx=$(BUILD_DIR)%.o)
 
 # Any flags for the C++ compiler?
-CXXFLAGS += -Iinclude #-I/usr/include/opencv4/
+CXXFLAGS += -Iinclude -I/usr/include/opencv4/
 
 # Libraries
-#LDFLAGS += -llapack -lblas -L/usr/lib/libarmadillo.so.9 -lopencv_core -lopencv_highgui -lopencv_imgproc -lopencv_imgcodecs
+LDFLAGS += -llapack -lblas -L/usr/lib/libarmadillo.so.9 -lopencv_core -lopencv_highgui -lopencv_imgproc -lopencv_imgcodecs
 
 ###
 # Build rules
