@@ -1,12 +1,11 @@
 #include "main.h"
-
+#include "mat.h"
 
 using namespace cv;
 
 
 Mat LUT_w;
 Mat LUT_h;
-
 
 // Helper function
 float sf(int in){
@@ -40,7 +39,7 @@ void initDCT(int WIDTH, int HEIGHT)
 	}
 }
 
-// Baseline: O(N^4)
+#if 0// Baseline: O(N^4)
 Mat student_dct(Mat input)
 {
 	const int HEIGHT = input.rows;
@@ -75,32 +74,100 @@ Mat student_dct(Mat input)
 
 	return result;
 }
-
+#endif
 
 // *****************
 //   Hint
 // *****************
 //
 // DCT as matrix multiplication
-
-/*
+#if 0
 Mat student_dct(Mat input)
 {
 	// -- Works only for WIDTH == HEIGHT
 	assert(input.rows == input.cols);
-	
+	const int HEIGHT = input.rows;
+	const int WIDTH  = input.cols;
+	Mat LUT_h_t = LUT_h.t();
+	Mat result = Mat(HEIGHT, WIDTH, CV_32FC1);
+
+	Matrix<float> mat_input(HEIGHT, WIDTH);
+	Matrix<float> temp_mat(HEIGHT, WIDTH);
+	Matrix<float> LUT_h_mat(HEIGHT, WIDTH);
+	Matrix<float> result_mat(HEIGHT, WIDTH);
+	Matrix<float> LUT_transpose(WIDTH,HEIGHT);
+
+	float* input_ptr  = input.ptr<float>();
+	float* result_ptr = result.ptr<float>();
+    float* LUT_h_ptr = LUT_h.ptr<float>();
+	float* LUT_h_ptr_t = LUT_h_t.ptr<float>();
+
+	//copy the mat, would add func to directly do so.
+	for(int i = 0; i < HEIGHT; i++)
+	{
+		for(int j = 0; j< WIDTH; j++)
+		{
+			mat_input.put(i,j, input_ptr[i*WIDTH+j]);
+			LUT_h_mat.put(i,j, LUT_h_ptr[i*WIDTH+j]);
+			LUT_transpose.put(i,j, LUT_h_ptr_t[i*WIDTH+j]);
+		}
+	}
 	// -- Matrix multiply with OpenCV
-	Mat output = LUT_w * input * LUT_w.t();
-
-	// TODO
-	// Replace the line above by your own matrix multiplication code
-	// You can use a temp matrix to store the intermediate result
-
-	return output;
+	//Mat output = LUT_w * input * LUT_w.t();
+	temp_mat = LUT_h_mat*mat_input;
+	result_mat = temp_mat*LUT_transpose;
+	
+	for(int i = 0; i < HEIGHT; i++)
+	{
+		for(int j = 0; j< WIDTH; j++)
+		{
+			result_ptr[i*WIDTH+j] = result_mat.get(i,j);
+		}
+	}
+	return result;
 }
-*/
+#endif
 
+// DCT as block multiplication
+Mat student_dct(Mat input)
+{
+    assert(input.rows == input.cols);
+	const int HEIGHT = input.rows;
+	const int WIDTH  = input.cols;
+	Mat LUT_h_t = LUT_h.t();
+	Mat result = Mat(HEIGHT, WIDTH, CV_32FC1);
 
+	Matrix<float> mat_input(HEIGHT, WIDTH);
+	Matrix<float> temp_mat(HEIGHT, WIDTH);
+	Matrix<float> LUT_h_mat(HEIGHT, WIDTH);
+	Matrix<float> result_mat(HEIGHT, WIDTH);
+	Matrix<float> LUT_transpose(WIDTH,HEIGHT);
 
+	float* input_ptr  = input.ptr<float>();
+	float* result_ptr = result.ptr<float>();
+    float* LUT_h_ptr = LUT_h.ptr<float>();
+	float* LUT_h_ptr_t = LUT_h_t.ptr<float>();
 
-
+	//copy the mat, would add func to directly do so.
+	for(int i = 0; i < HEIGHT; i++)
+	{
+		for(int j = 0; j< WIDTH; j++)
+		{
+			mat_input.put(i,j, input_ptr[i*WIDTH+j]);
+			LUT_h_mat.put(i,j, LUT_h_ptr[i*WIDTH+j]);
+			LUT_transpose.put(i,j, LUT_h_ptr_t[i*WIDTH+j]);
+		}
+	}
+	uint16_t block_size = 4; 
+	temp_mat = block_matrix_multiply(LUT_h_mat, mat_input, block_size);
+	result_mat = block_matrix_multiply(temp_mat, LUT_transpose, block_size);
+	
+	for(int i = 0; i < HEIGHT; i++)
+	{
+		for(int j = 0; j< WIDTH; j++)
+		{
+			result_ptr[i*WIDTH+j] = result_mat.get(i,j);
+		}
+	}
+	return result;
+}
