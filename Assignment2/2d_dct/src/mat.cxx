@@ -199,15 +199,15 @@ Matrix<T> block_matrix_multiply(const Matrix<T>&a, const Matrix<T>&b, uint16_t b
 }
 
 template class Matrix<float>;
-template class Matrix<double>;
-template class Matrix<int8_t>;
-template class Matrix<int16_t>;
-template class Matrix<int32_t>;
-template class Matrix<int64_t>;
-template class Matrix<uint8_t>;
-template class Matrix<uint16_t>;
-template class Matrix<uint32_t>;
-template class Matrix<uint64_t>;
+//template class Matrix<double>;
+//template class Matrix<int8_t>;
+//template class Matrix<int16_t>;
+//template class Matrix<int32_t>;
+//template class Matrix<int64_t>;
+//template class Matrix<uint8_t>;
+//template class Matrix<uint16_t>;
+//template class Matrix<uint32_t>;
+//template class Matrix<uint64_t>;
 
 template class Matrix<float> operator*<float>(Matrix<float> const&, Matrix<float> const&);
 template class Matrix<float> block_matrix_multiply(const Matrix<float>&, const Matrix<float>&, uint16_t);
