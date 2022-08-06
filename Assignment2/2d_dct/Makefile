@@ -1,5 +1,5 @@
 CXX?=g++
-CXXFLAGS=-O0 -Iinclude -I/usr/include/opencv4/
+CXXFLAGS=-O1 -Iinclude -I/usr/include/opencv4/
 
 # Libraries
 LDFLAGS += -llapack -lblas -lopencv_core -lopencv_highgui -lopencv_imgproc -lopencv_imgcodecs -lopencv_videoio
@@ -26,7 +26,10 @@ $(EXEC): $(OBJS)
 
 %.o: %.cxx
 	$(CXX) $(CXXFLAGS) -c $< -o $@
-
+install:
+	insmod CPUcntr.ko
+	dmesg|tail -1
 clean:
 	rm -f $(EXEC)
-	rm -f $(OBJDIR)/*.o
+	rm -f $(OBJDIR)/*.
+	rmmod CPUcntr.ko
