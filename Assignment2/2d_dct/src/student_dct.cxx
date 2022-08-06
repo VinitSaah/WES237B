@@ -9,10 +9,10 @@ using namespace cv;
 #define USE_LUT //option to enable look up table
 
 /* options to enable specific algo dct */
-#define USE_NAIVE_DCT 
+//#define USE_NAIVE_DCT 
 //#define USE_1D_SEPARABLE
 //#define USE_NAIVE_MM
-//#define USE_BMM
+#define USE_BMM
 
 Mat LUT_w;
 Mat LUT_h;
@@ -53,9 +53,9 @@ void initDCT(int WIDTH, int HEIGHT)
 Mat student_dct(Mat input)
 {
 	uint64_t cpu_count1 = 0;
-    uint64_t cpu_count2 = 0;;
-    uint64_t diff = 0;
-	init_counters(1, 0);
+        uint64_t cpu_count2 = 0;;
+        uint64_t diff = 0;
+	init_counters(1, 1);
 
 	const int HEIGHT = input.rows;
 	const int WIDTH  = input.cols;
@@ -103,7 +103,7 @@ Mat student_dct(Mat input)
 	}
 	cpu_count2 = get_cyclecount();
 	diff = cpu_count2 - cpu_count1;
-	std::cout << "CPU Cycle Count = "<< diff << " CPU execution Time: = " << (float)diff/(float)CPU_HZ << std::endl;
+	std::cout << "CPU Cycle Count = "<< diff << " CPU execution Time: = " << 64*(float)diff/(float)CPU_HZ << std::endl;
 
 	return result;
 }
@@ -113,9 +113,9 @@ Mat student_dct(Mat input)
 Mat student_dct(Mat input)
 {
 	uint64_t cpu_count1 = 0;
-    uint64_t cpu_count2 = 0;;
-    uint64_t diff = 0;
-
+        uint64_t cpu_count2 = 0;
+        uint64_t diff = 0;
+        init_counters(1, 1);
 	const int HEIGHT = input.rows;
 	const int WIDTH = input.cols;
 
@@ -182,8 +182,8 @@ Mat student_dct(Mat input)
 		}
 	}
 	cpu_count2 = get_cyclecount();
-    diff = cpu_count2 - cpu_count1;
-	std::cout << "CPU Cycle Count = "<< diff << " CPU execution Time: = " << (float)diff/(float)CPU_HZ << std::endl;
+        diff = cpu_count2 - cpu_count1;
+	std::cout << "CPU Cycle Count = "<< diff << " CPU execution Time: = " << 64*(float)diff/(float)CPU_HZ << std::endl;
 	return result;
 }
 #endif
@@ -195,9 +195,9 @@ Mat student_dct(Mat input)
 	// -- Works only for WIDTH == HEIGHT
 	assert(input.rows == input.cols);
 	uint64_t cpu_count1 = 0;
-    uint64_t cpu_count2 = 0;;
-    uint64_t diff = 0;
-	init_counters(1, 0);
+        uint64_t cpu_count2 = 0;;
+        uint64_t diff = 0;
+	init_counters(1, 1);
 
 	const int HEIGHT = input.rows;
 	const int WIDTH  = input.cols;
@@ -212,7 +212,7 @@ Mat student_dct(Mat input)
 
 	float* input_ptr  = input.ptr<float>();
 	float* result_ptr = result.ptr<float>();
-    float* LUT_h_ptr = LUT_h.ptr<float>();
+        float* LUT_h_ptr = LUT_h.ptr<float>();
 	float* LUT_h_ptr_t = LUT_h_t.ptr<float>();
 	std::cout << "Matrix Multiplication Algo" << std::endl;
 	//copy the mat, would add func to directly do so.
@@ -239,7 +239,7 @@ Mat student_dct(Mat input)
 		}
 	}
 	diff = cpu_count2 - cpu_count1;
-	std::cout << "CPU Cycle Count = "<< diff << " CPU execution Time: = " << (float)diff/(float)CPU_HZ << std::endl;
+	std::cout << "CPU Cycle Count = "<< diff << " CPU execution Time: = " << 64*(float)diff/(float)CPU_HZ << std::endl;
 	return result;
 }
 #endif
@@ -250,9 +250,9 @@ Mat student_dct(Mat input)
 {
     assert(input.rows == input.cols);
 	uint64_t cpu_count1 = 0;
-    uint64_t cpu_count2 = 0;;
-    uint64_t diff = 0;
-	init_counters(1, 0);
+        uint64_t cpu_count2 = 0;;
+        uint64_t diff = 0;
+	init_counters(1, 1);
 
 	const int HEIGHT = input.rows;
 	const int WIDTH  = input.cols;
@@ -267,7 +267,7 @@ Mat student_dct(Mat input)
 
 	float* input_ptr  = input.ptr<float>();
 	float* result_ptr = result.ptr<float>();
-    float* LUT_h_ptr = LUT_h.ptr<float>();
+        float* LUT_h_ptr = LUT_h.ptr<float>();
 	float* LUT_h_ptr_t = LUT_h_t.ptr<float>();
     
     std::cout<<"Block Matrix Multiplication Method" << std::endl;
@@ -287,7 +287,7 @@ Mat student_dct(Mat input)
 	result_mat = block_matrix_multiply(temp_mat, LUT_transpose, block_size);
 	cpu_count2 = get_cyclecount();
 	diff = cpu_count2 - cpu_count1;
-	std::cout << "CPU Cycle Count = "<< diff << " CPU execution Time: = " << (float)diff/(float)CPU_HZ << std::endl;
+	std::cout << "CPU Cycle Count = "<< diff << " CPU execution Time: = " << 64*(float)diff/(float)CPU_HZ << std::endl;
 	for(int i = 0; i < HEIGHT; i++)
 	{
 		for(int j = 0; j< WIDTH; j++)
