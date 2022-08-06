@@ -7,16 +7,19 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/core/core.hpp>
 #include "cycletime.h"
+#define CPU_HZ   650000000
 
 int main(int argc, const char* argv[])
 {
+    int size = std::stoi(argv[1]);
     uint64_t cpu_count1 = 0;
     uint64_t cpu_count2 = 0;;
     uint64_t diff = 0;
 
-    init_counters(1, 0);
-    uint16_t row = 12;
-    uint16_t col = 12;
+
+    init_counters(1, 1);
+    uint16_t row = size;
+    uint16_t col = size;
     Matrix<float> m1(row, col);
     Matrix<float> m2(row,col);
 
@@ -36,7 +39,9 @@ int main(int argc, const char* argv[])
     Matrix<float>m3 = m1*m2; // as per requirement.
     cpu_count2 = get_cyclecount();
     diff = cpu_count2 - cpu_count1;
-    std::cout << "CPU Count difference Naive approach= "<< diff << std::endl;
+    std::cout << "CPU Performance Matrix size = " << size <<  std::endl;
+    std::cout << "Naive approach, Cycle count = "<< diff << 
+	    " Exec Time " << 64*(float)diff/(float)CPU_HZ << std::endl;
     //m3.print_matrix();
 #if 0
     for(int i = 0; i < m3.get_matrix_height(); i++)
@@ -82,11 +87,13 @@ int main(int argc, const char* argv[])
             eig_mat_b(i,j) = i+1;
         }
     }
+    init_counters(1, 1);
     cpu_count1 = get_cyclecount();
     Eigen::MatrixXf eig_mat_c = eig_mat_a*eig_mat_b;
     cpu_count2 = get_cyclecount();
     diff = cpu_count2 - cpu_count1;
-    std::cout << "CPU Count difference Eigen Lib= "<< diff << std::endl;
+    std::cout << "Eigen Lib approach, Cycle count = "<< diff << 
+            " Exec Time " << 64*(float)diff/(float)CPU_HZ << std::endl;
     //std::cout << "Eigen Matrix\n" << eig_mat_c;
 
     //Comparison with OpenCV
@@ -101,11 +108,13 @@ int main(int argc, const char* argv[])
             ocv_b.at<float>(i,j) = i+1;
         }
     }
+    init_counters(1, 1);
     cpu_count1 = get_cyclecount();
     cv::Mat ocv_c = ocv_a*ocv_b;
     cpu_count2 = get_cyclecount();
     diff = cpu_count2 - cpu_count1;
-    std::cout << "CPU Count difference OpenCV Lib= "<< diff << std::endl;
+    std::cout << "OpenCV approach, Cycle count = "<< diff << 
+            " Exec Time " << 64*(float)diff/(float)CPU_HZ << std::endl;
     //std::cout << "Open CV Matrix\n" << ocv_c;
     return 0;
 }

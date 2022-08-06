@@ -21,8 +21,8 @@ OBJS := $(CXXSRCS:src/%.cxx=$(BUILD_DIR)%.o)
 CXXFLAGS += -Iinclude -I/usr/include/opencv4/
 
 # Libraries
-LDFLAGS += -llapack -lblas -L/usr/lib/libarmadillo.so.9 -lopencv_core -lopencv_highgui -lopencv_imgproc -lopencv_imgcodecs
-
+#LDFLAGS += -llapack -lblas -L/usr/lib/libarmadillo.so.9 -lopencv_core -lopencv_highgui -lopencv_imgproc -lopencv_imgcodecs
+LDFLAGS += -lopencv_core
 ###
 # Build rules
 ###
