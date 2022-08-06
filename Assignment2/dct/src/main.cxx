@@ -41,6 +41,7 @@ int main(int argc, const char * argv[]) {
 		Mat dct_cv;
 		//time(&start);
 		dct(gray, dct_cv);
+		//dct_cv = lab_dct_opt(gray);
 		//time(&end);
 		//std::cout << "Time taken by OpenCV DCT = " << double(end-start) << std::endl;
 #ifndef __arm__
@@ -81,7 +82,7 @@ int main(int argc, const char * argv[]) {
 		//time(&start);
 		dct_lab_opt = lab_dct_opt(gray);
 		//time(&end);
-		std::cout << "Time taken by dct optimized = " << double(end-start) << std::endl;
+		//std::cout << "Time taken by dct optimized = " << double(end-start) << std::endl;
 		//*******************/
 #ifndef __arm__
 		imshow("DCT Lab Opt", dct_lab_opt);
