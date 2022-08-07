@@ -10,9 +10,9 @@ using namespace cv;
 
 /* options to enable specific algo dct */
 //#define USE_NAIVE_DCT 
-//#define USE_1D_SEPARABLE
+#define USE_1D_SEPARABLE
 //#define USE_NAIVE_MM
-#define USE_BMM
+//#define USE_BMM
 
 Mat LUT_w;
 Mat LUT_h;
@@ -141,6 +141,7 @@ Mat student_dct(Mat input)
 	cpu_count1 = get_cyclecount();
 	for(int k=0; k<HEIGHT; k++) 
 	{
+		//value = 0.0;
 		for(int i=0; i<WIDTH; i++) 
 		{
 			value = 0.0;
@@ -154,15 +155,18 @@ Mat student_dct(Mat input)
 			}
 #ifndef USE_LUT
 			result_row.at<float>(k,i) = value * sf(i);
+			//std:: cout << "Result row " << result_row.at<float>(k,i) << std::endl; 
 #else
             result_row.at<float>(k,i) = value;
+			//std:: cout << "Result row " << result_row.at<float>(k,i) << std::endl;
 #endif
 		}
 	}
 
 	// Now perform the column transformation
 	for(int k=0; k<WIDTH; k++) 
-	{
+	{  
+		//value = 0.0;
 		for(int i=0; i<HEIGHT; i++) 
 		{
 			value = 0.0;
@@ -171,11 +175,11 @@ Mat student_dct(Mat input)
 #ifndef USE_LUT
 				value += result_row.at<float>(j,k) * cos(M_PI/((float)HEIGHT)*(j+1./2.)*(float)i);
 #else
-                value += result_row.at<float>(j,k) *  LUT_w_ptr[j * WIDTH + i];
+                value += result_row.at<float>(j,k) *  LUT_h_ptr[i * WIDTH + j];
 #endif
 			}
 #ifndef USE_LUT
-			result.at<float>(i, k) = value*sf(k)*scale;
+			result.at<float>(i, k) = value*sf(i)*scale;
 #else
             result.at<float>(i, k) = value;
 #endif
