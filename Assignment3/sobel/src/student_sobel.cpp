@@ -173,9 +173,9 @@ void sobel_neon(const Mat& src, Mat& dst)
             //Now we have float32 type data use neon intrinsics in block of 4 (float32x4), process remaining in other loop
             for(uint32_t block_idx = 0; block_idx< BLOCK_SIZE; block_idx++)
             {
-                input_reg = vld1q_f32(&input_chunk[block_idx]+4*block_idx);
-                kernel_reg_x = vld1q_f32(&ne_kernel_sobel_x[block_idx]+4*block_idx);
-                kernel_reg_y = vld1q_f32(&ne_kernel_sobel_y[block_idx]+4*block_idx);
+                input_reg = vld1q_f32(input_chunk+4*block_idx);
+                kernel_reg_x = vld1q_f32(ne_kernel_sobel_x+4*block_idx);
+                kernel_reg_y = vld1q_f32(ne_kernel_sobel_y+4*block_idx);
                 ne_gx = vmulq_f32(input_reg, kernel_reg_x);
                 ne_gy = vmulq_f32(input_reg, kernel_reg_y);
                 float32_t ne_gx_arr[4] = {0};
