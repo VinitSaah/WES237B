@@ -4,6 +4,7 @@
 #include <opencv2/highgui/highgui.hpp>
 
 #include "sobel.h"
+#include "timer.h"
 
 #define FRAME_NUMBER 1
 #define NAIVE 1
@@ -29,6 +30,8 @@ int main(int argc, const char * argv[])
 {
 
     int mode = 0;
+    LinuxTimer timer;
+    double time_elapsed = 0;
 
     if (argc < 2){
         usage();
@@ -73,6 +76,7 @@ int main(int argc, const char * argv[])
         imwrite("./image_outputs/image_gray.tif", gray);
 
         //OpenCV sobel filter
+        timer.start();
         Mat s_x, s_y, cv_sobel_out;
         Mat s_x_abs, s_y_abs, mag_squared;
         Sobel(gray, s_x, CV_32F, 1, 0, 3, 1, 0, BORDER_ISOLATED);
@@ -82,6 +86,9 @@ int main(int argc, const char * argv[])
         add(s_x_abs , s_y_abs, mag_squared);
         sqrt(mag_squared, cv_sobel_out);
         cv_sobel_out.convertTo(cv_sobel_out, CV_8U);
+        timer.stop();
+        time_elapsed += (timer.getElapsed())/10000000000.0;
+        cout << "Execution Time (s) for OpenCV= " << time_elapsed << endl;
         imwrite("./image_outputs/sobel_opencv.tif", cv_sobel_out);
 
         Mat sobel_out;

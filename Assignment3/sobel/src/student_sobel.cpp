@@ -4,7 +4,8 @@
 using namespace std;
 using namespace cv;
 
-#define LOOP_UNROLL_1
+//#define LOOP_UNROLL_1
+//#define FLOAT_IMPL
 //#define DEBUG_NEON
 const int sobel_kernel_x[3][3] = {
     { 1,  0, -1},
@@ -106,7 +107,7 @@ void sobel_unroll(const Mat& src, Mat& dst)
         }
     }
 }
-
+#ifdef FLOAT_IMPL
 void sobel_neon(const Mat& src, Mat& dst)
 {
     const int HEIGHT = src.rows;
@@ -173,9 +174,9 @@ void sobel_neon(const Mat& src, Mat& dst)
             //Now we have float32 type data use neon intrinsics in block of 4 (float32x4), process remaining in other loop
             for(uint32_t block_idx = 0; block_idx< BLOCK_SIZE; block_idx++)
             {
-                input_reg = vld1q_f32(input_chunk+4*block_idx);
-                kernel_reg_x = vld1q_f32(ne_kernel_sobel_x+4*block_idx);
-                kernel_reg_y = vld1q_f32(ne_kernel_sobel_y+4*block_idx);
+                input_reg = vld1q_f32(&input_chunk[4*block_idx]);
+                kernel_reg_x = vld1q_f32(&ne_kernel_sobel_x[4*block_idx]);
+                kernel_reg_y = vld1q_f32(&ne_kernel_sobel_y[4*block_idx]);
                 ne_gx = vmulq_f32(input_reg, kernel_reg_x);
                 ne_gy = vmulq_f32(input_reg, kernel_reg_y);
                 float32_t ne_gx_arr[4] = {0};
@@ -193,12 +194,110 @@ void sobel_neon(const Mat& src, Mat& dst)
                 gx +=  input_chunk[(4*BLOCK_SIZE)+rem]*ne_kernel_sobel_x[(4*BLOCK_SIZE)+rem];
                 gy +=  input_chunk[(4*BLOCK_SIZE)+rem]*ne_kernel_sobel_y[(4*BLOCK_SIZE)+rem];
             }
-            uint64_t gxgy= sqrt(int32_t(gx*gx+gy*gy));
+            uint64_t gxgy= sqrt((int32_t)(gx*gx+gy*gy));
             if(gxgy > 255)
             {
                 gxgy = 255;
             }
-            dst.at<uint8_t>(i,j) = (uint8_t)gxgy;  
+            dst.at<uint8_t>(i,j) = (uint8_t)gxgy;
         }
     }
 }
+#else
+void sobel_neon(const Mat& src, Mat& dst)
+{
+    const int HEIGHT = src.rows;
+    const int WIDTH  = src.cols;
+    
+    int16x8_t ne_gx;
+    int16x8_t ne_gy;
+    int16x8_t input_reg;
+    int16x8_t kernel_reg_x;
+    int16x8_t kernel_reg_y;
+
+    int16_t KERNEL_SIZE = 3*3;
+    //Converting into float32 type as it is big enough to store int and uint8_t and avoids recast during sqrt
+    int16_t ne_kernel_sobel_x[KERNEL_SIZE] = {0};
+    int16_t ne_kernel_sobel_y[KERNEL_SIZE] = {0};
+
+    int16_t input_chunk[KERNEL_SIZE] = {0};
+    
+    //Fill sobel filter kernel into 1D memory;
+    for(uint8_t i = 0; i< 3; i++)
+    {
+        for(uint8_t j=0; j<3; j++)
+        {
+            ne_kernel_sobel_x[i*3+j] = (int16_t)sobel_kernel_x[i][j];
+            ne_kernel_sobel_y[i*3+j] = (int16_t)sobel_kernel_y[i][j];
+        }
+    }
+#ifdef DEBUG_NEON
+    std::cout << "Linearized Sobel Filter X" << std::endl;
+    for(uint8_t i = 0; i< 3; i++)
+    {
+        for(uint8_t j = 0; j< 3; j++)
+        {
+            std::cout << ne_kernel_sobel_x[i*3+j] << " ";
+        }
+        std::cout << std::endl;
+    }
+    std::cout << "Linearized Sobel Filter Y" << std::endl;
+    for(uint8_t i = 0; i< 3; i++)
+    {
+        for(uint8_t j = 0; j< 3; j++)
+        {
+            std::cout << ne_kernel_sobel_y[i*3+j] << " ";
+        }
+        std::cout << std::endl;
+    }
+#endif
+    int16_t BLOCK_SIZE = KERNEL_SIZE/8;
+    uint8_t REM_SIZE = KERNEL_SIZE%8;
+    for(int i = 0; i < HEIGHT-2; i++)
+    {
+        for(int j = 0; j < WIDTH-2; j++)
+        {
+            int16_t gx = 0;
+            int16_t gy = 0;
+            //fill kernal size data 3*3 size worth into float32 type arr;
+            for(int k = 0; k < 3; k++)
+            {
+                for(int l = 0; l< 3; l++)
+                {
+                    input_chunk[k*3+l] = (int16_t)src.at<uint8_t>((i+k),(j+l));
+                }
+            }
+            //Now we have int16 type data use neon intrinsics in block of 8 (int16x8), process remaining in other loop
+            for(uint32_t block_idx = 0; block_idx< BLOCK_SIZE; block_idx++)
+            {
+                input_reg = vld1q_s16(&input_chunk[8*block_idx]);
+                kernel_reg_x = vld1q_s16(&ne_kernel_sobel_x[8*block_idx]);
+                kernel_reg_y = vld1q_s16(&ne_kernel_sobel_y[8*block_idx]);
+                ne_gx = vmulq_s16(input_reg, kernel_reg_x);
+                ne_gy = vmulq_s16(input_reg, kernel_reg_y);
+                int16_t ne_gx_arr[8] = {0};
+                int16_t ne_gy_arr[8] = {0};
+                vst1q_s16(&ne_gx_arr[0], ne_gx);
+                vst1q_s16(&ne_gy_arr[0], ne_gy);
+
+                gx += ne_gx_arr[0]+ne_gx_arr[1]+ne_gx_arr[2]+ne_gx_arr[3]+ne_gx_arr[4]+ne_gx_arr[5]+ne_gx_arr[6]+ne_gx_arr[7];
+                gy += ne_gy_arr[0]+ne_gy_arr[1]+ne_gy_arr[2]+ne_gy_arr[3]+ne_gy_arr[4]+ne_gy_arr[5]+ne_gy_arr[6]+ne_gy_arr[7]; 
+            }
+
+            //Process the remaining
+            for(uint8_t rem = 0; rem< REM_SIZE; rem++)
+            {
+                gx +=  input_chunk[(8*BLOCK_SIZE)+rem]*ne_kernel_sobel_x[(8*BLOCK_SIZE)+rem];
+                gy +=  input_chunk[(8*BLOCK_SIZE)+rem]*ne_kernel_sobel_y[(8*BLOCK_SIZE)+rem];
+            }
+            uint64_t gxgy= sqrt(gx*gx+gy*gy);
+            if(gxgy > 255)
+            {
+                gxgy = 255;
+            }
+            dst.at<uint8_t>(i,j) = (uint8_t)gxgy;
+        }
+    }
+}
+
+#endif

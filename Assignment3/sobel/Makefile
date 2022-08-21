@@ -1,5 +1,5 @@
 CXX?=g++
-CXXFLAGS=-O1 -ftree-vectorize -std=c++11 -I/usr/include/opencv4/ -g
+CXXFLAGS=-O2 -ftree-vectorize -std=c++11 -I/usr/include/opencv4/ -pg
 
 EXEC=hw3
 
