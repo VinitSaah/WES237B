@@ -1,1 +1,2 @@
-Naive implementation of Sobel Filter.
+Fir filter optimization
+Sobel Filter optimization.
