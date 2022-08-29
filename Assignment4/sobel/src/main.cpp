@@ -10,7 +10,7 @@
 using namespace std;
 using namespace cv;
 
-//#define UNIFIED_MEM
+#define UNIFIED_MEM
 
 enum SobelType
 {
@@ -137,12 +137,9 @@ size_t size_img =  HEIGHT*WIDTH*sizeof(uchar);
 			case SOBEL_GPU:
 				timer.start();
 				//TODO: call the sobel GPU function
-#ifndef UNIFIED_MEM
 				cudaMemcpy(gray_ptr, gray.ptr<uchar>(), size_img, cudaMemcpyHostToDevice);
 				sobel_filter_gpu(gray_ptr, sobel_out_ptr,HEIGHT, WIDTH);
 				cudaMemcpy(sobel_out.ptr<uchar>(), sobel_out_ptr, size_img, cudaMemcpyDeviceToHost);
-#else
-#endif
 				timer.stop();
 				break;
 		}
