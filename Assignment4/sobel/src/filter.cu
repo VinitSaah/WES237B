@@ -75,6 +75,8 @@ void sobel_filter_kernel(const uchar * input, uchar * output, const uint height,
 {
     uint64_t col = blockIdx.x*blockDim.x +threadIdx.x;
     uint64_t row = blockIdx.y*blockDim.y +threadIdx.y;
+    uint64_t stride_x = blockDim.x*gridDim.x;
+    uint64_t stride_y = blockDim.y*gridDim.y;
 
     const int sobel_kernel_x[3][3] = 
 	{
@@ -89,8 +91,8 @@ void sobel_filter_kernel(const uchar * input, uchar * output, const uint height,
     	{ 0,  0, 0},
     	{ -1, -2,-1}
 	};
-
-    if(col < (width-2) && row < (height-2))
+    
+    while(col < (width-2) && row < (height-2))
     {
         int32_t reg1 = 0;
         int32_t reg2 = 0;
@@ -120,7 +122,9 @@ void sobel_filter_kernel(const uchar * input, uchar * output, const uint height,
         {
             gxgy = 255; //max value of uint8_t It corresponds to White
         }
-        output[row*width+col] = (uint8_t)gxgy;  
+        output[row*width+col] = (uint8_t)gxgy;
+        col += stride_x;
+        row += stride_y; 
     }
 
 }
@@ -131,8 +135,9 @@ void sobel_filter_gpu(const uchar * input, uchar * output, const uint height, co
 	//TODO: launch kernel function
 	if(NULL != input && NULL != output)
     {
-        dim3 dimGrid(64, 64,1);
-        dim3 dimBlock(divup(width, dimGrid.x), divup(width, dimGrid.y),1);
+        int block_size = 32;
+        dim3 dimBlock(block_size, block_size);
+        dim3 dimGrid(divup(width, dimBlock.x), divup(height, dimBlock.y));
         sobel_filter_kernel<<<dimGrid, dimBlock>>>(input, output, height, width);
         cudaDeviceSynchronize();
     }

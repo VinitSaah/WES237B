@@ -157,7 +157,7 @@ size_t size_img =  HEIGHT*WIDTH*sizeof(uchar);
 
 
 		// Display results
-		if(gray.cols <= 1024 || gray.rows <= 1024)
+		//if(gray.cols <= 1024 || gray.rows <= 1024)
 		{
 			imshow("Input", gray);
 			imshow("Sobel", sobel_out);
