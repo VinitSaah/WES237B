@@ -92,7 +92,7 @@ void sobel_filter_kernel(const uchar * input, uchar * output, const uint height,
     	{ -1, -2,-1}
 	};
     
-    while(col < (width-2) && row < (height-2))
+    if(col < (width-2) && row < (height-2))
     {
         int32_t reg1 = 0;
         int32_t reg2 = 0;
@@ -123,8 +123,6 @@ void sobel_filter_kernel(const uchar * input, uchar * output, const uint height,
             gxgy = 255; //max value of uint8_t It corresponds to White
         }
         output[row*width+col] = (uint8_t)gxgy;
-        col += stride_x;
-        row += stride_y; 
     }
 
 }

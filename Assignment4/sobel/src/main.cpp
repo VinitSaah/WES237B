@@ -137,9 +137,13 @@ size_t size_img =  HEIGHT*WIDTH*sizeof(uchar);
 			case SOBEL_GPU:
 				timer.start();
 				//TODO: call the sobel GPU function
+#ifndef UNIFIED_MEM
 				cudaMemcpy(gray_ptr, gray.ptr<uchar>(), size_img, cudaMemcpyHostToDevice);
+#endif
 				sobel_filter_gpu(gray_ptr, sobel_out_ptr,HEIGHT, WIDTH);
+#ifndef UNIFIED_MEM
 				cudaMemcpy(sobel_out.ptr<uchar>(), sobel_out_ptr, size_img, cudaMemcpyDeviceToHost);
+#endif
 				timer.stop();
 				break;
 		}
