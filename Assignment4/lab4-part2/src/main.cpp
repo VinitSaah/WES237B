@@ -104,23 +104,26 @@ int main(int argc, const char *argv[])
 	cudaMalloc((void**)&blur_ptr, WIDTH*HEIGHT*sizeof(unsigned char));
 #else
     //TODO: Allocate unified memory for the necessary matrices
-	cudaMallocManaged(&gray_ptr, WIDTH*HEIGHT*sizeof(uchar));
-	cudaMallocManaged(&rgb_ptr, size_img);
-
+	cudaMallocManaged((void**)&gray_ptr, WIDTH*HEIGHT*sizeof(uchar));
+	cudaMallocManaged((void**)&rgb_ptr, size_img);
+	cudaMallocManaged((void**)&invert_ptr, WIDTH*HEIGHT*sizeof(unsigned char));
+	cudaMallocManaged((void**)&blur_ptr, WIDTH*HEIGHT*sizeof(unsigned char));
     //TODO: Declare the image matrices which point to the unified memory
 #endif
 #ifndef UNIFIED_MEM
 	Mat gray = Mat(HEIGHT, WIDTH, CV_8U);
 	Mat rgb = Mat(HEIGHT, WIDTH, CV_8UC3);
+	Mat invert = Mat(HEIGHT, WIDTH, CV_8U);
+	Mat blr = Mat(HEIGHT,WIDTH,CV_8U);
 #else
 	Mat gray = Mat(HEIGHT, WIDTH, CV_8U, gray_ptr);
 	Mat rgb = Mat(HEIGHT, WIDTH, CV_8UC3,rgb_ptr);
+	Mat invert = Mat(HEIGHT, WIDTH, CV_8U, invert_ptr);
+	Mat blr = Mat(HEIGHT,WIDTH,CV_8U, blur_ptr);
 #endif
 
 	//Matrix for OpenCV inversion
 	Mat ones = Mat::ones(HEIGHT, WIDTH, CV_8U)*255;
-	Mat invert = Mat::zeros(HEIGHT, WIDTH, CV_8U);
-	Mat blr = Mat(HEIGHT,WIDTH,CV_8U);
 	Mat frame;	
 	char key=0;
 	int count = 0;
@@ -160,22 +163,27 @@ int main(int argc, const char *argv[])
 				break;
 
 			case GPU:
+				size_t size_img_1c = WIDTH*HEIGHT*sizeof(uchar);
 #ifndef UNIFIED_MEM
                 /* TODO: 1) Copy data from host to device
                  *       2) Call GPU host function with device data
                  *       3) Copy data from device to host
                 */
 			   //Memcpy input matrix
-			   img_rgb2gray_host(gray.ptr<uchar>(), rgb.ptr<uchar>(), gray_ptr, rgb_ptr, HEIGHT, WIDTH, CHANNELS);
-			   img_invert(invert_ptr, gray_ptr, HEIGHT, WIDTH);
-			   cudaMemcpy(invert.ptr<uchar>(), invert_ptr, HEIGHT*WIDTH, cudaMemcpyDeviceToHost);
-			   img_blur(blur_ptr, gray_ptr, HEIGHT, WIDTH, BLUR_SIZE);
-			   cudaMemcpy(blr.ptr<uchar>(), blur_ptr, HEIGHT*WIDTH, cudaMemcpyDeviceToHost);
+				cudaMemcpy(rgb_ptr, rgb.ptr<uchar>(), size_img, cudaMemcpyHostToDevice);
+				img_rgb2gray_host(gray.ptr<uchar>(), rgb.ptr<uchar>(), gray_ptr, rgb_ptr, HEIGHT, WIDTH, CHANNELS);
+				cudaMemcpy(gray.ptr<uchar>(), gray_ptr, size_img_1c, cudaMemcpyDeviceToHost);
+				img_invert(invert_ptr, gray_ptr, HEIGHT, WIDTH);
+				cudaMemcpy(invert.ptr<uchar>(), invert_ptr, HEIGHT*WIDTH, cudaMemcpyDeviceToHost);
+				img_blur(blur_ptr, gray_ptr, HEIGHT, WIDTH, BLUR_SIZE);
+				cudaMemcpy(blr.ptr<uchar>(), blur_ptr, HEIGHT*WIDTH, cudaMemcpyDeviceToHost);
 
 #else
                 /* TODO: 1) Call GPU host function with unified memory allocated data
                 */
 			   img_rgb2gray_host(gray.ptr<uchar>(), rgb.ptr<uchar>(), gray_ptr, rgb_ptr, HEIGHT, WIDTH, CHANNELS);
+			   img_invert(invert_ptr, gray_ptr, HEIGHT, WIDTH);
+			   img_blur(blur_ptr, gray_ptr, HEIGHT, WIDTH, BLUR_SIZE);
 #endif
 				break;
 

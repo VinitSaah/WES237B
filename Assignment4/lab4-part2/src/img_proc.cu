@@ -74,8 +74,7 @@ void img_blur_cpu(uchar* out, const uchar* in, const uint width, const uint heig
                 for(int l = 0; l< blur_size; l++)
                 {
                     reg1 += in[(i+k)*width+(j+l)] * blur_kernel[(k*blur_size)+l];
-                }
-                
+                }  
             }
             out[i*width+j] = (uchar)(reg1/num_kernel);  
         }
@@ -90,20 +89,23 @@ TODO: Write GPU kernel functions for the above functions
 __global__
 void img_rgb2gray_kernel(uchar* out, const uchar* in, const uint width, const uint height, const int channels)
 {
-    uint64_t col = blockIdx.x*blockDim.x +threadIdx.x;
-    uint64_t row = blockIdx.y*blockDim.y +threadIdx.y;
+    const int x = blockIdx.x * blockDim.x + threadIdx.x;
+	const int y = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if(col < width && row < height)
-    {
-        uint64_t offset = row*width+col;
-        int sum  = 0;
-        for (int i  = 0; i < channels; i++)
-        {
-            sum += in[(offset+i)*channels];
-        }
-        sum = sum/3;
-        out[offset] = sum;
-    }
+	int out_idx, in_idx;
+
+	if (x < width && y < height){
+
+		out_idx = y * width + x;
+		in_idx = out_idx * channels;
+
+		uchar r = in[in_idx];
+		uchar g = in[in_idx+1];
+		uchar b = in[in_idx+2];
+
+		uchar gray_pixel = (r + g + b)/3;
+		out[out_idx] = gray_pixel;
+	}
 }
 
 // =================== GPU Host Functions ===================
@@ -115,16 +117,12 @@ void img_rgb2gray_host(uchar* out, const uchar* in, uchar* gray_ptr, uchar* rgb_
 {
     if(NULL != in && NULL != rgb_ptr && NULL != gray_ptr && NULL != rgb_ptr)
     {
-        size_t size_img = width*height;
-        cudaMemcpy(rgb_ptr, in, size_img*channels, cudaMemcpyHostToDevice);
-
+       
         dim3 dimGrid(64, 64,1);
         dim3 dimBlock(divup(width, dimGrid.x), divup(width, dimGrid.y),1);
 
         img_rgb2gray_kernel<<<dimGrid, dimBlock>>>(gray_ptr, rgb_ptr, width, height, channels);
-
         cudaDeviceSynchronize();
-        cudaMemcpy(out, gray_ptr, size_img, cudaMemcpyDeviceToHost);
     #if 0
         cudaError_t err{cudaGetLastError()};
     if (err != cudaSuccess)
