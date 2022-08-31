@@ -1,0 +1,11 @@
+{
+    "C_Cpp.default.includePath": [
+        "/usr/local/cuda/include",
+        "/usr/include/opencv4/opencv",
+        "/usr/include/opencv4",
+        "include"
+    ],
+    "C_Cpp.default.defines": [
+        "OPENCV4"
+    ]
+}
