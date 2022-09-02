@@ -75,9 +75,7 @@ void sobel_filter_kernel(const uchar * input, uchar * output, const uint height,
 {
     uint64_t col = blockIdx.x*blockDim.x +threadIdx.x;
     uint64_t row = blockIdx.y*blockDim.y +threadIdx.y;
-    uint64_t stride_x = blockDim.x*gridDim.x;
-    uint64_t stride_y = blockDim.y*gridDim.y;
-
+    
     const int sobel_kernel_x[3][3] = 
 	{
     	{ 1,  0, -1},
@@ -85,7 +83,7 @@ void sobel_filter_kernel(const uchar * input, uchar * output, const uint height,
     	{ 1,  0, -1}
 	};
 
-    const int sobel_kernel_y[3][3] = 
+   const int sobel_kernel_y[3][3] = 
 	{
     	{ 1,  2, 1},
     	{ 0,  0, 0},
