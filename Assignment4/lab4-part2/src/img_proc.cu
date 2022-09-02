@@ -118,9 +118,10 @@ void img_rgb2gray_host(uchar* out, const uchar* in, uchar* gray_ptr, uchar* rgb_
     if(NULL != in && NULL != rgb_ptr && NULL != gray_ptr && NULL != rgb_ptr)
     {
        
-        dim3 dimGrid(64, 64,1);
-        dim3 dimBlock(divup(width, dimGrid.x), divup(width, dimGrid.y),1);
-
+        //dim3 dimGrid(64, 64,1);
+        //dim3 dimBlock(divup(width, dimGrid.x), divup(width, dimGrid.y),1);
+        dim3 dimBlock(32,32);
+        dim3 dimGrid(divup(width, dimBlock.x), divup(width, dimBlock.y));
         img_rgb2gray_kernel<<<dimGrid, dimBlock>>>(gray_ptr, rgb_ptr, width, height, channels);
         cudaDeviceSynchronize();
     #if 0
@@ -151,8 +152,10 @@ void img_invert(uchar* out, const uchar* in, const uint height, const uint width
 {
     if(NULL != in && NULL != out )
     {
-        dim3 dimGrid(64, 64,1);
-        dim3 dimBlock(divup(width, dimGrid.x), divup(width, dimGrid.y),1);
+        //dim3 dimGrid(64, 64,1);
+        //dim3 dimBlock(divup(width, dimGrid.x), divup(width, dimGrid.y),1);
+        dim3 dimBlock(32,32);
+        dim3 dimGrid(divup(width, dimBlock.x), divup(width, dimBlock.y));
         img_invert_kernel<<<dimGrid, dimBlock>>>(out, in, width, height);
         cudaDeviceSynchronize();
     }
@@ -202,8 +205,10 @@ void img_blur(uchar* out, const uchar* in, const uint height, const uint width, 
         }
         
         cudaMemcpy(blur_kernel_k, blur_kernel, size_kernel, cudaMemcpyHostToDevice);
-        dim3 dimGrid(64, 64,1);
-        dim3 dimBlock(divup(width, dimGrid.x), divup(width, dimGrid.y),1);
+        //dim3 dimGrid(64, 64,1);
+        //dim3 dimBlock(divup(width, dimGrid.x), divup(width, dimGrid.y),1);
+        dim3 dimBlock(32,32);
+        dim3 dimGrid(divup(width, dimBlock.x), divup(width, dimBlock.y));
         img_blur_kernel<<<dimGrid, dimBlock>>>(out, in, height, width, blur_kernel_k, blur_size);
         cudaDeviceSynchronize();
         free(blur_kernel);

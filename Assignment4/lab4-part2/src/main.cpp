@@ -11,15 +11,15 @@
 #define CPU 1
 #define GPU 2
 
-#define BLUR_SIZE 5
+#define BLUR_SIZE 10
 
-//#define UNIFIED_MEM 
+#define UNIFIED_MEM 
 
 using namespace std;
 using namespace cv;
 
 #define GRAY
-#define INVERT
+//#define INVERT
 #define BLUR
 
 int usage()
@@ -89,37 +89,57 @@ int main(int argc, const char *argv[])
 	LinuxTimer timer;
 	LinuxTimer fps_counter;
 	double time_elapsed = 0;
-    
+
 	uchar* rgb_ptr = NULL;
 	uchar* gray_ptr = NULL;
+#ifdef INVERT
 	uchar* invert_ptr = NULL;
+#endif
+#ifdef BLUR
 	uchar* blur_ptr = NULL;
+#endif
 	size_t size_img = WIDTH*HEIGHT*CHANNELS*sizeof(uchar); 
 #ifndef UNIFIED_MEM
     //TODO: Allocate memory on the GPU device.
     cudaMalloc((void**)&rgb_ptr, size_img);
 	//TODO: Declare the host image result matrices
 	cudaMalloc((void**)&gray_ptr, WIDTH*HEIGHT*sizeof(unsigned char));
+#ifdef INVERT
 	cudaMalloc((void**)&invert_ptr, WIDTH*HEIGHT*sizeof(unsigned char));
+#endif
+#ifdef BLUR
 	cudaMalloc((void**)&blur_ptr, WIDTH*HEIGHT*sizeof(unsigned char));
+#endif
 #else
     //TODO: Allocate unified memory for the necessary matrices
 	cudaMallocManaged((void**)&gray_ptr, WIDTH*HEIGHT*sizeof(uchar));
 	cudaMallocManaged((void**)&rgb_ptr, size_img);
+#ifdef INVERT
 	cudaMallocManaged((void**)&invert_ptr, WIDTH*HEIGHT*sizeof(unsigned char));
+#endif
+#ifdef BLUR
 	cudaMallocManaged((void**)&blur_ptr, WIDTH*HEIGHT*sizeof(unsigned char));
+#endif
     //TODO: Declare the image matrices which point to the unified memory
 #endif
 #ifndef UNIFIED_MEM
 	Mat gray = Mat(HEIGHT, WIDTH, CV_8U);
 	Mat rgb = Mat(HEIGHT, WIDTH, CV_8UC3);
+#ifdef INVERT
 	Mat invert = Mat(HEIGHT, WIDTH, CV_8U);
+#endif
+#ifdef BLUR
 	Mat blr = Mat(HEIGHT,WIDTH,CV_8U);
+#endif
 #else
 	Mat gray = Mat(HEIGHT, WIDTH, CV_8U, gray_ptr);
 	Mat rgb = Mat(HEIGHT, WIDTH, CV_8UC3,rgb_ptr);
+#ifdef INVERT
 	Mat invert = Mat(HEIGHT, WIDTH, CV_8U, invert_ptr);
+#endif
+#ifdef BLUR
 	Mat blr = Mat(HEIGHT,WIDTH,CV_8U, blur_ptr);
+#endif
 #endif
 
 	//Matrix for OpenCV inversion
@@ -151,15 +171,22 @@ int main(int argc, const char *argv[])
 				cvtColor(rgb, gray, CV_BGR2GRAY);
 				
 #endif
-				//cv::subtract(ones,rgb,invert);
+#ifdef INVERT
 				invert = ones-gray;
+#endif
+#ifdef BLUR
 				blur(gray,blr,Size(BLUR_SIZE,BLUR_SIZE));
+#endif
 				break;
 			case CPU:
                 // TODO: 1) Call the CPU functions
 				img_rgb2gray_cpu(gray.ptr<uchar>(),rgb.ptr<uchar>(),HEIGHT, WIDTH, CHANNELS);
+#ifdef INVERT
 				img_invert_cpu(invert.ptr<uchar>(),gray.ptr<uchar>(),HEIGHT, WIDTH);
+#endif
+#ifdef BLUR
 				img_blur_cpu(blr.ptr<uchar>(), gray.ptr<uchar>(),HEIGHT, WIDTH, BLUR_SIZE);
+#endif
 				break;
 
 			case GPU:
@@ -173,17 +200,24 @@ int main(int argc, const char *argv[])
 				cudaMemcpy(rgb_ptr, rgb.ptr<uchar>(), size_img, cudaMemcpyHostToDevice);
 				img_rgb2gray_host(gray.ptr<uchar>(), rgb.ptr<uchar>(), gray_ptr, rgb_ptr, HEIGHT, WIDTH, CHANNELS);
 				cudaMemcpy(gray.ptr<uchar>(), gray_ptr, size_img_1c, cudaMemcpyDeviceToHost);
+#ifdef INVERT
 				img_invert(invert_ptr, gray_ptr, HEIGHT, WIDTH);
 				cudaMemcpy(invert.ptr<uchar>(), invert_ptr, HEIGHT*WIDTH, cudaMemcpyDeviceToHost);
+#endif
+#ifdef BLUR
 				img_blur(blur_ptr, gray_ptr, HEIGHT, WIDTH, BLUR_SIZE);
 				cudaMemcpy(blr.ptr<uchar>(), blur_ptr, HEIGHT*WIDTH, cudaMemcpyDeviceToHost);
-
+#endif
 #else
                 /* TODO: 1) Call GPU host function with unified memory allocated data
                 */
 			   img_rgb2gray_host(gray.ptr<uchar>(), rgb.ptr<uchar>(), gray_ptr, rgb_ptr, HEIGHT, WIDTH, CHANNELS);
+#ifdef INVERT
 			   img_invert(invert_ptr, gray_ptr, HEIGHT, WIDTH);
+#endif
+#ifdef BLUR
 			   img_blur(blur_ptr, gray_ptr, HEIGHT, WIDTH, BLUR_SIZE);
+#endif
 #endif
 				break;
 
@@ -202,13 +236,21 @@ int main(int argc, const char *argv[])
 		}
 
 		imshow("Gray", gray);
+#ifdef INVERT
 		imshow("Invert", invert);
+#endif
+#ifdef BLUR
 		imshow("Blurred", blr);
+#endif
 
 		key = waitKey(1);
 	}
 	cudaFree(rgb_ptr);
 	cudaFree(gray_ptr);
+#ifdef INVERT
 	cudaFree(invert_ptr);
+#endif
+#ifdef BLUR
 	cudaFree(blur_ptr);
+#endif
 }
